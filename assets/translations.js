@@ -43,7 +43,7 @@ const TRANSLATIONS = {
         inbound_port_label:     'Порт',
         inbound_port_hint:      'Порт SOCKS5',
         vless_link_label:       'VLESS URL',
-        vless_link_hint:        'Полная VLESS-ссылка включая параметры и имя',
+        vless_link_hint:        'VLESS URL',
         socks5_auth_label:      'Включить авторизацию SOCKS5',
         socks5_user_label:      'Имя пользователя',
         socks5_pass_label:      'Пароль',
