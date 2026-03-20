@@ -36,7 +36,7 @@ const TRANSLATIONS = {
         inbound_ip_hint:        'Адрес SOCKS5',
         inbound_port_label:     'Порт inbound',
         inbound_port_hint:      'Порт SOCKS5',
-        vless_link_label:       'VLESS-ссылка',
+        vless_link_label:       'VLESS URL',
         vless_link_hint:        'Полная VLESS-ссылка включая параметры и имя',
         socks5_auth_label:      'Включить авторизацию SOCKS5',
         socks5_user_label:      'Имя пользователя',
