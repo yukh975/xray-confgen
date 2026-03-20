@@ -59,6 +59,28 @@
                     <label>Правила маршрутизации</label>
                     <button type="button" id="add-rule-btn" class="add-btn">+ Добавить</button>
                 </div>
+
+                <div class="db-select-row">
+                    <div class="db-field">
+                        <label for="geosite_db">Geosite база</label>
+                        <input type="text" id="geosite_db" name="geosite_db"
+                               value="geosite.dat" list="geosite-list" autocomplete="off">
+                        <datalist id="geosite-list">
+                            <option value="geosite.dat">
+                            <option value="geosite_RU.dat">
+                            <option value="geosite_IR.dat">
+                        </datalist>
+                    </div>
+                    <div class="db-field">
+                        <label for="geoip_db">Geoip база</label>
+                        <input type="text" id="geoip_db" name="geoip_db"
+                               value="geoip.dat" list="geoip-list" autocomplete="off">
+                        <datalist id="geoip-list">
+                            <option value="geoip.dat">
+                        </datalist>
+                    </div>
+                </div>
+
                 <div class="routing-hint">Правила применяются сверху вниз. Последнее правило — fallback.</div>
 
                 <div id="routing-rules">

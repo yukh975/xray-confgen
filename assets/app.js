@@ -107,6 +107,8 @@ form.addEventListener('submit', async (e) => {
                 inbound_ip:    ip,
                 inbound_port:  port,
                 vless_link:    link,
+                geosite_db:    document.getElementById('geosite_db').value.trim() || 'geosite.dat',
+                geoip_db:      document.getElementById('geoip_db').value.trim()   || 'geoip.dat',
                 routing_rules: collectRules(),
             }),
         });
@@ -131,6 +133,8 @@ clearBtn.addEventListener('click', () => {
     form.reset();
     document.getElementById('inbound_ip').value   = '0.0.0.0';
     document.getElementById('inbound_port').value = '10808';
+    document.getElementById('geosite_db').value   = 'geosite.dat';
+    document.getElementById('geoip_db').value     = 'geoip.dat';
     loadDefaultRules();
     hideAll();
 });
