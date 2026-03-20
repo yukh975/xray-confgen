@@ -22,8 +22,8 @@ $inboundPort  = (int)($in['inbound_port'] ?? 0);
 $vlessLink    = trim((string)($in['vless_link']   ?? ''));
 $routingRules = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
 
-if ($inboundIp === '') {
-    err('Не указан IP-адрес inbound');
+if ($inboundIp === '' || filter_var($inboundIp, FILTER_VALIDATE_IP) === false) {
+    err('Некорректный IP-адрес inbound');
 }
 if ($inboundPort < 1 || $inboundPort > 65535) {
     err('Порт inbound должен быть в диапазоне 1–65535');
@@ -280,6 +280,9 @@ function buildRouting(array $rules): ?array
     foreach ($rules as $rule) {
         $type   = $rule['rule_type'] ?? '';
         $db     = trim((string)($rule['db'] ?? ''));
+        if ($db !== '' && !preg_match('/^[a-zA-Z0-9_\-]+\.dat$/', $db)) {
+            continue; // skip rule with invalid db name
+        }
         $action = $rule['action'] ?? 'proxy';
 
         // Support both new `values` array and legacy `value` string

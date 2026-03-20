@@ -2,7 +2,7 @@
 //  Constants & defaults
 // ============================================================
 
-const DEFAULT_DATABASES = ['geosite.dat', 'geoip.dat'];
+const DEFAULT_DATABASES = ['geosite.dat', 'geoip.dat']; // fallback if server unavailable
 
 
 const DEFAULT_RULES = [
@@ -79,10 +79,16 @@ function renderDatabases() {
     databases.forEach((name, idx) => {
         const tag = document.createElement('div');
         tag.className = 'db-tag';
-        tag.innerHTML = `
-            <span class="db-tag-name">${name}</span>
-            <button type="button" class="remove-btn db-remove" title="Удалить">✕</button>
-        `;
+        const nameSpan = document.createElement('span');
+        nameSpan.className   = 'db-tag-name';
+        nameSpan.textContent = name;
+        const removeBtn = document.createElement('button');
+        removeBtn.type      = 'button';
+        removeBtn.className = 'remove-btn db-remove';
+        removeBtn.title     = 'Удалить';
+        removeBtn.textContent = '✕';
+        tag.appendChild(nameSpan);
+        tag.appendChild(removeBtn);
         tag.querySelector('.db-remove').addEventListener('click', () => {
             databases.splice(idx, 1);
             renderDatabases();
@@ -202,10 +208,14 @@ function buildValuePicker(initDb, selectedValues = []) {
     function addChip(val) {
         if (chipsRow.querySelector(`[data-val="${CSS.escape(val)}"]`)) return;
         const chip = document.createElement('span');
-        chip.className  = 'picker-chip';
+        chip.className   = 'picker-chip';
         chip.dataset.val = val;
-        chip.innerHTML  = `${val} <button type="button">✕</button>`;
-        chip.querySelector('button').addEventListener('click', () => {
+        chip.appendChild(document.createTextNode(val + ' '));
+        const chipBtn = document.createElement('button');
+        chipBtn.type        = 'button';
+        chipBtn.textContent = '✕';
+        chip.appendChild(chipBtn);
+        chipBtn.addEventListener('click', () => {
             selected.delete(val);
             chip.remove();
             updateTrigger();
@@ -455,7 +465,19 @@ addRuleBtn.addEventListener('click', () => {
 //  Init
 // ============================================================
 
-(function init() {
+(async function init() {
+    // Load available databases from server
+    let serverDbs = [];
+    try {
+        const res  = await fetch('api/databases.php');
+        const data = await res.json();
+        serverDbs  = Array.isArray(data.databases) && data.databases.length
+            ? data.databases
+            : [...DEFAULT_DATABASES];
+    } catch {
+        serverDbs = [...DEFAULT_DATABASES];
+    }
+
     const state = loadState();
 
     if (state) {
@@ -463,16 +485,19 @@ addRuleBtn.addEventListener('click', () => {
         document.getElementById('inbound_port').value = state.inbound_port ?? '10808';
         document.getElementById('vless_link').value   = state.vless_link   ?? '';
 
-        databases = Array.isArray(state.databases)
+        // Merge saved + server databases (server is authoritative, saved may have extras)
+        const saved = Array.isArray(state.databases)
             ? state.databases.map(db => typeof db === 'object' ? db.name : db)
-            : [...DEFAULT_DATABASES];
+            : [];
+        const merged = [...new Set([...serverDbs, ...saved])];
+        databases = merged;
         renderDatabases();
 
         rulesContainer.innerHTML = '';
         const rules = Array.isArray(state.rules) && state.rules.length ? state.rules : DEFAULT_RULES;
         rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
     } else {
-        databases = [...DEFAULT_DATABASES];
+        databases = serverDbs;
         renderDatabases();
         loadDefaultRules();
     }
