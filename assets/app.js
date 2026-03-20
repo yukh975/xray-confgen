@@ -27,12 +27,6 @@ const errorBox       = document.getElementById('error');
 const errorText      = document.getElementById('error-text');
 
 const dbListEl       = document.getElementById('db-list');
-const addDbBtn       = document.getElementById('add-db-btn');
-const addDbForm      = document.getElementById('add-db-form');
-const newDbName      = document.getElementById('new-db-name');
-const confirmDbBtn   = document.getElementById('confirm-db-btn');
-const cancelDbBtn    = document.getElementById('cancel-db-btn');
-
 const rulesContainer = document.getElementById('routing-rules');
 const addRuleBtn     = document.getElementById('add-rule-btn');
 
@@ -53,7 +47,6 @@ function saveState() {
         inbound_ip:   document.getElementById('inbound_ip').value,
         inbound_port: document.getElementById('inbound_port').value,
         vless_link:   document.getElementById('vless_link').value,
-        databases,
         rules: collectRules(),
     };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
@@ -76,25 +69,13 @@ document.addEventListener('change', saveState);
 
 function renderDatabases() {
     dbListEl.innerHTML = '';
-    databases.forEach((name, idx) => {
+    databases.forEach(name => {
         const tag = document.createElement('div');
         tag.className = 'db-tag';
         const nameSpan = document.createElement('span');
         nameSpan.className   = 'db-tag-name';
         nameSpan.textContent = name;
-        const removeBtn = document.createElement('button');
-        removeBtn.type      = 'button';
-        removeBtn.className = 'remove-btn db-remove';
-        removeBtn.title     = 'Удалить';
-        removeBtn.textContent = '✕';
         tag.appendChild(nameSpan);
-        tag.appendChild(removeBtn);
-        tag.querySelector('.db-remove').addEventListener('click', () => {
-            databases.splice(idx, 1);
-            renderDatabases();
-            renderAllRuleDbSelects();
-            saveState();
-        });
         dbListEl.appendChild(tag);
     });
 }
@@ -104,31 +85,6 @@ function dbToRuleType(db) {
 }
 
 
-addDbBtn.addEventListener('click', () => {
-    addDbForm.classList.toggle('hidden');
-    newDbName.focus();
-});
-
-cancelDbBtn.addEventListener('click', () => {
-    addDbForm.classList.add('hidden');
-    newDbName.value = '';
-});
-
-confirmDbBtn.addEventListener('click', () => {
-    const name = newDbName.value.trim();
-    if (!name || databases.includes(name)) { newDbName.focus(); return; }
-    databases.push(name);
-    renderDatabases();
-    renderAllRuleDbSelects();
-    addDbForm.classList.add('hidden');
-    newDbName.value = '';
-    saveState();
-});
-
-newDbName.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); confirmDbBtn.click(); }
-    if (e.key === 'Escape') cancelDbBtn.click();
-});
 
 // ============================================================
 //  Tag cache
@@ -480,25 +436,18 @@ addRuleBtn.addEventListener('click', () => {
 
     const state = loadState();
 
+    databases = serverDbs;
+    renderDatabases();
+
     if (state) {
         document.getElementById('inbound_ip').value   = state.inbound_ip   ?? '0.0.0.0';
         document.getElementById('inbound_port').value = state.inbound_port ?? '10808';
         document.getElementById('vless_link').value   = state.vless_link   ?? '';
 
-        // Merge saved + server databases (server is authoritative, saved may have extras)
-        const saved = Array.isArray(state.databases)
-            ? state.databases.map(db => typeof db === 'object' ? db.name : db)
-            : [];
-        const merged = [...new Set([...serverDbs, ...saved])];
-        databases = merged;
-        renderDatabases();
-
         rulesContainer.innerHTML = '';
         const rules = Array.isArray(state.rules) && state.rules.length ? state.rules : DEFAULT_RULES;
         rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
     } else {
-        databases = serverDbs;
-        renderDatabases();
         loadDefaultRules();
     }
 })();
@@ -556,8 +505,6 @@ clearBtn.addEventListener('click', () => {
     form.reset();
     document.getElementById('inbound_ip').value   = '0.0.0.0';
     document.getElementById('inbound_port').value = '10808';
-    databases = [...DEFAULT_DATABASES];
-    renderDatabases();
     loadDefaultRules();
     hideAll();
     localStorage.removeItem(LS_KEY);

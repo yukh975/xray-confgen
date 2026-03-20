@@ -187,20 +187,7 @@ button.secondary:hover {
     font-weight: 600;
 }
 
-/* Database manager */
-
-.add-db-form {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 6px;
-    align-items: center;
-}
-
-.add-db-form input {
-    padding: 7px 10px;
-    font-size: 13px;
-    font-family: var(--mono);
-}
+/* Database list */
 
 .db-list {
     display: flex;
@@ -224,13 +211,6 @@ button.secondary:hover {
     font-family: var(--mono);
 }
 
-.db-tag .remove-btn {
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
-    border-radius: 4px;
-    padding: 0;
-}
 
 /* Routing rules */
 
