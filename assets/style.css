@@ -144,6 +144,10 @@ form {
     flex: 0 0 160px;
 }
 
+.field-row .field-group--level {
+    flex: 0 0 210px;
+}
+
 .field-group {
     display: flex;
     flex-direction: column;
