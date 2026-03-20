@@ -2,7 +2,7 @@
 
 ---
 
-# VLESS → генератор конфига xray-core
+# VLESS → генератор конфига xray-core v1.0.0
 
 [![Version](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/yukh975/vless-parser/releases)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
