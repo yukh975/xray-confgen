@@ -31,12 +31,9 @@ if (!str_starts_with($vlessLink, 'vless://')) {
     err('Ссылка должна начинаться с vless://');
 }
 
-// --- Parse VLESS URI -------------------------------------------------------
+// --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-
-// --- Build config ----------------------------------------------------------
-
 $config = buildConfig($inboundIp, $inboundPort, $parsed);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -45,7 +42,6 @@ echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON
 
 function parseVless(string $link): array
 {
-    // vless://uuid@host:port?params#name
     $url = parse_url($link);
 
     if ($url === false || empty($url['host'])) {
@@ -57,57 +53,84 @@ function parseVless(string $link): array
         err('UUID некорректен или отсутствует');
     }
 
-    $host = $url['host'];
-    $port = (int)($url['port'] ?? 443);
-    $name = isset($url['fragment']) ? urldecode($url['fragment']) : '';
-
     parse_str($url['query'] ?? '', $q);
 
-    $security = $q['security'] ?? 'none';
     $network  = $q['type']     ?? 'tcp';
+    $security = $q['security'] ?? 'none';
     $flow     = $q['flow']     ?? '';
+
+    // flow несовместим с xhttp
+    if ($network === 'xhttp') {
+        $flow = '';
+    }
 
     $result = [
         'uuid'     => $uuid,
-        'host'     => $host,
-        'port'     => $port,
-        'name'     => $name,
-        'security' => $security,
+        'host'     => $url['host'],
+        'port'     => (int)($url['port'] ?? 443),
+        'name'     => isset($url['fragment']) ? urldecode($url['fragment']) : '',
         'network'  => $network,
+        'security' => $security,
         'flow'     => $flow,
+        'transport' => parseTransport($network, $q, $url['host']),
+        'securitySettings' => parseSecurity($security, $q, $url['host']),
     ];
 
-    // Reality-specific
-    if ($security === 'reality') {
-        $result['reality'] = [
-            'serverName'  => $q['sni']  ?? '',
+    return $result;
+}
+
+/**
+ * Разбирает параметры транспортного уровня в зависимости от network.
+ */
+function parseTransport(string $network, array $q, string $remoteHost): array
+{
+    return match ($network) {
+        'ws' => [
+            'path' => $q['path'] ?? '/',
+            'host' => $q['host'] ?? $remoteHost,
+        ],
+        'xhttp' => [
+            'path' => $q['path'] ?? '/',
+            'host' => $q['host'] ?? $remoteHost,
+            'mode' => $q['mode'] ?? 'auto',
+        ],
+        'grpc' => [
+            'serviceName' => $q['serviceName'] ?? $q['mode'] ?? '',
+            'mode'        => $q['mode']        ?? 'gun',
+        ],
+        'h2' => [
+            'path' => $q['path'] ?? '/',
+            'host' => $q['host'] ?? $remoteHost,
+        ],
+        'tcp', 'kcp', 'quic' => [],
+        default => [],
+    };
+}
+
+/**
+ * Разбирает параметры безопасности (TLS / Reality).
+ */
+function parseSecurity(string $security, array $q, string $remoteHost): array
+{
+    return match ($security) {
+        'reality' => [
+            'serverName'  => $q['sni']  ?? $remoteHost,
             'fingerprint' => $q['fp']   ?? 'chrome',
             'publicKey'   => $q['pbk']  ?? '',
             'shortId'     => $q['sid']  ?? '',
             'spiderX'     => $q['spx']  ?? '',
-        ];
-    }
-
-    // XHTTP-specific
-    if ($network === 'xhttp') {
-        $result['xhttp'] = [
-            'path' => $q['path'] ?? '/',
-            'host' => $q['host'] ?? '',
-            'mode' => $q['mode'] ?? 'auto',
-        ];
-    }
-
-    // TLS-specific
-    if ($security === 'tls') {
-        $result['tls'] = [
-            'serverName'    => $q['sni']              ?? $host,
+        ],
+        'tls' => [
+            'serverName'    => $q['sni']              ?? $remoteHost,
             'fingerprint'   => $q['fp']               ?? '',
             'allowInsecure' => ($q['allowInsecure'] ?? '0') === '1',
-        ];
-    }
-
-    return $result;
+            'alpn'          => isset($q['alpn']) ? explode(',', $q['alpn']) : [],
+        ],
+        default => [],
+    };
 }
+
+// ---------------------------------------------------------------------------
 
 function buildConfig(string $ip, int $port, array $v): array
 {
@@ -131,67 +154,27 @@ function buildConfig(string $ip, int $port, array $v): array
         $userEntry['flow'] = $v['flow'];
     }
 
-    $vnext = [[
-        'address' => $v['host'],
-        'port'    => $v['port'],
-        'users'   => [$userEntry],
-    ]];
-
-    $streamSettings = [
-        'network'  => $v['network'],
-        'security' => $v['security'],
-    ];
-
-    if ($v['security'] === 'reality') {
-        $r = $v['reality'];
-        $streamSettings['realitySettings'] = [
-            'serverName'  => $r['serverName'],
-            'fingerprint' => $r['fingerprint'],
-            'publicKey'   => $r['publicKey'],
-            'shortId'     => $r['shortId'],
-        ];
-        if ($r['spiderX'] !== '') {
-            $streamSettings['realitySettings']['spiderX'] = $r['spiderX'];
-        }
-    }
-
-    if ($v['network'] === 'xhttp') {
-        $x = $v['xhttp'];
-        $streamSettings['xhttpSettings'] = [
-            'path' => $x['path'],
-            'mode' => $x['mode'],
-        ];
-        if ($x['host'] !== '') {
-            $streamSettings['xhttpSettings']['host'] = $x['host'];
-        }
-    }
-
-    if ($v['security'] === 'tls') {
-        $t = $v['tls'];
-        $streamSettings['tlsSettings'] = [
-            'serverName'    => $t['serverName'],
-            'allowInsecure' => $t['allowInsecure'],
-        ];
-        if ($t['fingerprint'] !== '') {
-            $streamSettings['tlsSettings']['fingerprint'] = $t['fingerprint'];
-        }
-    }
+    $streamSettings = buildStreamSettings($v);
 
     $outbound = [
-        'tag'            => 'proxy',
-        'protocol'       => 'vless',
-        'settings'       => ['vnext' => $vnext],
+        'tag'      => 'proxy',
+        'protocol' => 'vless',
+        'settings' => [
+            'vnext' => [[
+                'address' => $v['host'],
+                'port'    => $v['port'],
+                'users'   => [$userEntry],
+            ]],
+        ],
         'streamSettings' => $streamSettings,
     ];
 
-    if (!empty($v['name'])) {
+    if ($v['name'] !== '') {
         $outbound['_comment'] = $v['name'];
     }
 
     return [
-        'log' => [
-            'loglevel' => 'warning',
-        ],
+        'log' => ['loglevel' => 'warning'],
         'inbounds'  => [$inbound],
         'outbounds' => [
             $outbound,
@@ -199,6 +182,82 @@ function buildConfig(string $ip, int $port, array $v): array
             ['tag' => 'block',  'protocol' => 'blackhole'],
         ],
     ];
+}
+
+function buildStreamSettings(array $v): array
+{
+    $ss = [
+        'network'  => $v['network'],
+        'security' => $v['security'],
+    ];
+
+    // --- Transport settings ------------------------------------------------
+    $t = $v['transport'];
+
+    switch ($v['network']) {
+        case 'ws':
+            $ss['wsSettings'] = [
+                'path'    => $t['path'],
+                'headers' => ['Host' => $t['host']],
+            ];
+            break;
+
+        case 'xhttp':
+            $xs = ['path' => $t['path'], 'mode' => $t['mode']];
+            if ($t['host'] !== '') {
+                $xs['host'] = $t['host'];
+            }
+            $ss['xhttpSettings'] = $xs;
+            break;
+
+        case 'grpc':
+            $ss['grpcSettings'] = [
+                'serviceName' => $t['serviceName'],
+                'multiMode'   => $t['mode'] === 'multi',
+            ];
+            break;
+
+        case 'h2':
+            $ss['httpSettings'] = [
+                'path' => $t['path'],
+                'host' => [$t['host']],
+            ];
+            break;
+    }
+
+    // --- Security settings -------------------------------------------------
+    $sec = $v['securitySettings'];
+
+    switch ($v['security']) {
+        case 'reality':
+            $rs = [
+                'serverName'  => $sec['serverName'],
+                'fingerprint' => $sec['fingerprint'],
+                'publicKey'   => $sec['publicKey'],
+                'shortId'     => $sec['shortId'],
+            ];
+            if ($sec['spiderX'] !== '') {
+                $rs['spiderX'] = $sec['spiderX'];
+            }
+            $ss['realitySettings'] = $rs;
+            break;
+
+        case 'tls':
+            $ts = [
+                'serverName'    => $sec['serverName'],
+                'allowInsecure' => $sec['allowInsecure'],
+            ];
+            if ($sec['fingerprint'] !== '') {
+                $ts['fingerprint'] = $sec['fingerprint'];
+            }
+            if (!empty($sec['alpn'])) {
+                $ts['alpn'] = $sec['alpn'];
+            }
+            $ss['tlsSettings'] = $ts;
+            break;
+    }
+
+    return $ss;
 }
 
 function isValidUuid(string $uuid): bool
