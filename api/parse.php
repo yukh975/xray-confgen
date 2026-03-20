@@ -20,8 +20,6 @@ if (!is_array($in)) {
 $inboundIp    = trim((string)($in['inbound_ip']   ?? ''));
 $inboundPort  = (int)($in['inbound_port'] ?? 0);
 $vlessLink    = trim((string)($in['vless_link']   ?? ''));
-$geositeDb    = trim((string)($in['geosite_db']   ?? 'geosite.dat')) ?: 'geosite.dat';
-$geoipDb      = trim((string)($in['geoip_db']     ?? 'geoip.dat'))   ?: 'geoip.dat';
 $routingRules = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
 
 if ($inboundIp === '') {
@@ -37,7 +35,7 @@ if (!str_starts_with($vlessLink, 'vless://')) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules, $geositeDb, $geoipDb);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -135,7 +133,7 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, array $routingRules, string $geositeDb, string $geoipDb): array
+function buildConfig(string $ip, int $port, array $v, array $routingRules): array
 {
     $inbound = [
         'tag'      => 'socks-in',
@@ -186,7 +184,7 @@ function buildConfig(string $ip, int $port, array $v, array $routingRules, strin
         ],
     ];
 
-    $routing = buildRouting($routingRules, $geositeDb, $geoipDb);
+    $routing = buildRouting($routingRules);
     if ($routing !== null) {
         $config['routing'] = $routing;
     }
@@ -270,7 +268,7 @@ function buildStreamSettings(array $v): array
     return $ss;
 }
 
-function buildRouting(array $rules, string $geositeDb, string $geoipDb): ?array
+function buildRouting(array $rules): ?array
 {
     if (empty($rules)) {
         return null;
@@ -282,6 +280,7 @@ function buildRouting(array $rules, string $geositeDb, string $geoipDb): ?array
     foreach ($rules as $rule) {
         $type   = $rule['rule_type'] ?? '';
         $value  = trim((string)($rule['value'] ?? ''));
+        $db     = trim((string)($rule['db']    ?? ''));
         $action = $rule['action'] ?? 'proxy';
 
         if ($value === '' || !in_array($type, ['ip', 'domain'], true) || !in_array($action, $allowedActions, true)) {
@@ -289,11 +288,12 @@ function buildRouting(array $rules, string $geositeDb, string $geoipDb): ?array
         }
 
         $xrayRule = ['type' => 'field', 'outboundTag' => $action];
+        $prefix   = $type === 'ip' ? 'geoip' : 'geosite';
 
         if ($type === 'ip') {
-            $xrayRule['ip'] = [resolveGeoValue($value, 'geoip', $geoipDb)];
+            $xrayRule['ip'] = [formatGeoValue($value, $prefix, $db)];
         } else {
-            $xrayRule['domain'] = [resolveGeoValue($value, 'geosite', $geositeDb)];
+            $xrayRule['domain'] = [formatGeoValue($value, $prefix, $db)];
         }
 
         $xrayRules[] = $xrayRule;
@@ -310,31 +310,36 @@ function buildRouting(array $rules, string $geositeDb, string $geoipDb): ?array
 }
 
 /**
- * Преобразует значение geo в правильный формат для xray-core.
+ * Форматирует значение категории в нужный формат xray-core.
  *
- * Если база нестандартная (не geoip.dat / geosite.dat), конвертирует:
- *   geosite:ru  →  ext:geosite_RU.dat:ru
- *   geoip:ru    →  ext:geoip_RU.dat:ru
- *
- * Значения вида ext:... и IP/CIDR остаются без изменений.
+ * Логика:
+ *   - IP/CIDR (содержит точку или /) — возвращается как есть
+ *   - Уже в формате ext:... — возвращается как есть
+ *   - Уже с префиксом geosite:/geoip: — возвращается как есть
+ *   - Иначе: "ru" + db="geosite_RU.dat" → "ext:geosite_RU.dat:ru"
+ *            "ru" + db="geosite.dat"    → "geosite:ru"
  */
-function resolveGeoValue(string $value, string $prefix, string $db): string
+function formatGeoValue(string $value, string $prefix, string $db): string
 {
+    // Уже полный формат — не трогаем
+    if (str_starts_with($value, 'ext:') ||
+        str_starts_with($value, 'geosite:') ||
+        str_starts_with($value, 'geoip:')) {
+        return $value;
+    }
+
+    // IP или CIDR — не трогаем
+    if (str_contains($value, '.') || str_contains($value, ':') || str_contains($value, '/')) {
+        return $value;
+    }
+
+    // Категория без префикса
     $defaultDb = $prefix . '.dat';
-
-    // Уже в формате ext: или это IP/CIDR — не трогаем
-    if (str_starts_with($value, 'ext:') || !str_starts_with($value, $prefix . ':')) {
-        return $value;
+    if ($db === '' || $db === $defaultDb) {
+        return $prefix . ':' . $value;
     }
 
-    // Стандартная база — оставляем как есть
-    if ($db === $defaultDb) {
-        return $value;
-    }
-
-    // Нестандартная база: geosite:ru → ext:geosite_RU.dat:ru
-    $category = substr($value, strlen($prefix) + 1);
-    return 'ext:' . $db . ':' . $category;
+    return 'ext:' . $db . ':' . $value;
 }
 
 function isValidUuid(string $uuid): bool
