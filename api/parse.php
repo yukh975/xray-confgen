@@ -88,6 +88,15 @@ function parseVless(string $link): array
         ];
     }
 
+    // XHTTP-specific
+    if ($network === 'xhttp') {
+        $result['xhttp'] = [
+            'path' => $q['path'] ?? '/',
+            'host' => $q['host'] ?? '',
+            'mode' => $q['mode'] ?? 'auto',
+        ];
+    }
+
     // TLS-specific
     if ($security === 'tls') {
         $result['tls'] = [
@@ -143,6 +152,17 @@ function buildConfig(string $ip, int $port, array $v): array
         ];
         if ($r['spiderX'] !== '') {
             $streamSettings['realitySettings']['spiderX'] = $r['spiderX'];
+        }
+    }
+
+    if ($v['network'] === 'xhttp') {
+        $x = $v['xhttp'];
+        $streamSettings['xhttpSettings'] = [
+            'path' => $x['path'],
+            'mode' => $x['mode'],
+        ];
+        if ($x['host'] !== '') {
+            $streamSettings['xhttpSettings']['host'] = $x['host'];
         }
     }
 
