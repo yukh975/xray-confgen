@@ -207,6 +207,7 @@ textarea:invalid:not(:placeholder-shown) {
 .hint {
     font-size: 12px;
     color: var(--muted);
+    white-space: pre-line;
 }
 
 /* Buttons */
@@ -675,12 +676,24 @@ pre#result-json {
     font-size: 14px;
 }
 
-/* Section separator */
+/* Section title with trailing line */
 
-.form-sep {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 4px 0;
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
 }
 
 /* Utility */

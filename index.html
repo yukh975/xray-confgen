@@ -24,6 +24,8 @@
         <form id="vless-form" novalidate>
 
             <!-- Inbound -->
+            <div class="section-title">Inbound</div>
+
             <div class="field-row">
                 <div class="field-group">
                     <label for="inbound_ip" data-i18n="inbound_ip_label"></label>
@@ -78,7 +80,8 @@
                 </div>
             </div>
 
-            <hr class="form-sep">
+            <!-- VLESS -->
+            <div class="section-title">VLESS</div>
 
             <div class="field-group">
                 <label for="vless_link" data-i18n="vless_link_label"></label>
@@ -91,26 +94,20 @@
                 <span class="hint" data-i18n="vless_link_hint"></span>
             </div>
 
-            <hr class="form-sep">
+            <!-- Databases -->
+            <div class="section-title">Databases</div>
 
-            <!-- Available databases -->
-            <div class="section-block">
-                <div class="section-header">
-                    <label data-i18n="db_section_label"></label>
-                </div>
-                <div id="db-list" class="db-list">
-                    <!-- populated by JS -->
-                </div>
+            <div id="db-list" class="db-list">
+                <!-- populated by JS -->
             </div>
 
-            <hr class="form-sep">
+            <!-- Routing -->
+            <div class="section-title">
+                Routing
+                <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
+            </div>
 
-            <!-- Routing rules -->
             <div class="section-block">
-                <div class="section-header">
-                    <label data-i18n="routing_label"></label>
-                    <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
-                </div>
                 <div class="field-row" style="margin-bottom:6px">
                     <div class="field-group">
                         <label for="default_outbound" data-i18n="default_outbound_label"></label>
@@ -138,9 +135,9 @@
                 </div>
             </div>
 
-            <hr class="form-sep">
-
             <!-- Logging -->
+            <div class="section-title">Logging</div>
+
             <div class="field-group">
                 <label class="toggle-row">
                     <input type="checkbox" id="log_enabled" name="log_enabled">
