@@ -283,6 +283,39 @@ button.secondary:hover {
 }
 
 
+/* Password field with reveal button */
+
+.input-reveal {
+    position: relative;
+}
+
+.input-reveal input {
+    width: 100%;
+    padding-right: 38px;
+}
+
+.reveal-btn {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    width: 34px;
+    background: transparent;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.reveal-btn:hover {
+    color: var(--text);
+}
+
 /* Auth fields (shown when SOCKS5 auth is enabled) */
 
 .auth-fields {

@@ -110,6 +110,12 @@ function loadState() {
 document.addEventListener('input', saveState);
 document.addEventListener('change', saveState);
 
+// Toggle password visibility
+document.getElementById('reveal-pass').addEventListener('click', () => {
+    const input = document.getElementById('socks5_pass');
+    input.type = input.type === 'password' ? 'text' : 'password';
+});
+
 // Toggle SOCKS5 auth fields visibility
 const socks5AuthCheckbox = document.getElementById('socks5_auth');
 const socks5AuthFields   = document.getElementById('socks5-auth-fields');
