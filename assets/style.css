@@ -378,6 +378,10 @@ button.secondary:hover {
     color: #fff;
 }
 
+#add-rule-btn {
+    align-self: flex-end;
+}
+
 #routing-rules {
     display: flex;
     flex-direction: column;
