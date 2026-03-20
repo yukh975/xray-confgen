@@ -4,6 +4,16 @@
 
 # Changelog
 
+## v1.0.2 — 2026-03-20
+
+### UI
+- Password reveal button uses SVG icons (open / crossed-out eye) that toggle on click
+- Named section titles: Inbound, VLESS, Databases, Routing, Logging
+- Uniform vertical spacing between all form sections
+- Field labels simplified: removed redundant "Inbound" from IP and port labels
+
+---
+
 ## v1.0.1 — 2026-03-20
 
 ### UI
