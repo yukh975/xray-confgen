@@ -73,8 +73,8 @@ server {
     listen 443 ssl;
     server_name your.domain.com;
 
-    ssl_certificate     /etc/ssl/certs/your.domain.com.crt;
-    ssl_certificate_key /etc/ssl/private/your.domain.com.key;
+    ssl_certificate     /path/to/ssl/certificate.crt;
+    ssl_certificate_key /path/to/ssl/certificate.key;
 
     root  /path/to/vless-parser;
     index index.html;
