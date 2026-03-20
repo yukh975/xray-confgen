@@ -4,13 +4,6 @@
 
 const DEFAULT_DATABASES = ['geosite.dat', 'geoip.dat'];
 
-// Fallback presets if .dat file is unavailable
-const PRESETS = {
-    domain: ['ru-blocked','ru-blocked-all','ru-available-only-inside',
-             'antifilter-download','antifilter-download-community',
-             'refilter','category-ads-all','win-spy','win-update','win-extra','ru'],
-    ip:     ['private', 'ru'],
-};
 
 const DEFAULT_RULES = [
     { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
@@ -335,7 +328,7 @@ function buildValuePicker(initDb, selectedValues = []) {
             dropdown.insertBefore(loading, chipsRow);
 
             const tags = await fetchTags(currentDb);
-            knownTags = tags.length ? tags : (PRESETS[dbToRuleType(currentDb)] ?? []);
+            knownTags = tags;
             renderCheckboxes(knownTags);
         } else {
             const si = dropdown.querySelector('.picker-search input');
