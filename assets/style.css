@@ -100,6 +100,14 @@ h1 .arrow {
     color: var(--accent);
 }
 
+h1 .version {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0;
+    vertical-align: middle;
+}
+
 .subtitle {
     color: var(--muted);
     font-size: 14px;
