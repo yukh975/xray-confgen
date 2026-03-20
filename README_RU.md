@@ -130,12 +130,6 @@ vless-parser/
 
 ---
 
-## Лицензия
-
-[MIT](LICENSE.md)
-
----
-
 ## Автор
 
 Юрий Хачатурян (при поддержке [Claude.AI](https://claude.ai)), 2026.

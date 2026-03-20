@@ -212,6 +212,30 @@ button.secondary:hover {
 }
 
 
+/* Toggle checkbox row */
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    width: fit-content;
+}
+
+.toggle-row input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+}
+
 /* Routing rules */
 
 .add-btn {

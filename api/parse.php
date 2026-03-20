@@ -17,10 +17,11 @@ if (!is_array($in)) {
     err('Некорректный JSON в запросе');
 }
 
-$inboundIp    = trim((string)($in['inbound_ip']   ?? ''));
-$inboundPort  = (int)($in['inbound_port'] ?? 0);
-$vlessLink    = trim((string)($in['vless_link']   ?? ''));
-$routingRules = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
+$inboundIp       = trim((string)($in['inbound_ip']       ?? ''));
+$inboundPort     = (int)($in['inbound_port']             ?? 0);
+$vlessLink       = trim((string)($in['vless_link']       ?? ''));
+$blockBittorrent = (bool)($in['block_bittorrent']        ?? false);
+$routingRules    = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
 
 if ($inboundIp === '' || filter_var($inboundIp, FILTER_VALIDATE_IP) === false) {
     err('Некорректный IP-адрес inbound');
@@ -35,7 +36,7 @@ if (!str_starts_with($vlessLink, 'vless://')) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules, $blockBittorrent);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -133,8 +134,13 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, array $routingRules): array
+function buildConfig(string $ip, int $port, array $v, array $routingRules, bool $blockBittorrent = false): array
 {
+    $destOverride = ['http', 'tls'];
+    if ($blockBittorrent) {
+        $destOverride[] = 'bittorrent';
+    }
+
     $inbound = [
         'tag'      => 'socks-in',
         'listen'   => $ip,
@@ -146,7 +152,7 @@ function buildConfig(string $ip, int $port, array $v, array $routingRules): arra
         ],
         'sniffing' => [
             'enabled'      => true,
-            'destOverride' => ['http', 'tls'],
+            'destOverride' => $destOverride,
         ],
     ];
 
@@ -184,7 +190,7 @@ function buildConfig(string $ip, int $port, array $v, array $routingRules): arra
         ],
     ];
 
-    $routing = buildRouting($routingRules);
+    $routing = buildRouting($routingRules, $blockBittorrent);
     if ($routing !== null) {
         $config['routing'] = $routing;
     }
@@ -268,13 +274,21 @@ function buildStreamSettings(array $v): array
     return $ss;
 }
 
-function buildRouting(array $rules): ?array
+function buildRouting(array $rules, bool $blockBittorrent = false): ?array
 {
-    if (empty($rules)) {
-        return null;
+    $xrayRules = [];
+
+    if ($blockBittorrent) {
+        $xrayRules[] = [
+            'type'        => 'field',
+            'protocol'    => ['bittorrent'],
+            'outboundTag' => 'block',
+        ];
     }
 
-    $xrayRules      = [];
+    if (empty($rules) && empty($xrayRules)) {
+        return null;
+    }
     $allowedActions = ['direct', 'proxy', 'block'];
 
     foreach ($rules as $rule) {

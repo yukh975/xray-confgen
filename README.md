@@ -130,12 +130,6 @@ Returns the list of available `.dat` files from the `db/` directory.
 
 ---
 
-## License
-
-[MIT](LICENSE.md)
-
----
-
 ## Author
 
 Yuriy Khachaturian (powered by [Claude.AI](https://claude.ai)), 2026.

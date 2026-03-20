@@ -44,9 +44,10 @@ const LS_KEY = 'vless_parser_state';
 
 function saveState() {
     const state = {
-        inbound_ip:   document.getElementById('inbound_ip').value,
-        inbound_port: document.getElementById('inbound_port').value,
-        vless_link:   document.getElementById('vless_link').value,
+        inbound_ip:       document.getElementById('inbound_ip').value,
+        inbound_port:     document.getElementById('inbound_port').value,
+        vless_link:       document.getElementById('vless_link').value,
+        block_bittorrent: document.getElementById('block_bittorrent').checked,
         rules: collectRules(),
     };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
@@ -440,9 +441,10 @@ addRuleBtn.addEventListener('click', () => {
     renderDatabases();
 
     if (state) {
-        document.getElementById('inbound_ip').value   = state.inbound_ip   ?? '0.0.0.0';
-        document.getElementById('inbound_port').value = state.inbound_port ?? '10808';
-        document.getElementById('vless_link').value   = state.vless_link   ?? '';
+        document.getElementById('inbound_ip').value       = state.inbound_ip       ?? '0.0.0.0';
+        document.getElementById('inbound_port').value     = state.inbound_port     ?? '10808';
+        document.getElementById('vless_link').value       = state.vless_link       ?? '';
+        document.getElementById('block_bittorrent').checked = state.block_bittorrent ?? false;
 
         rulesContainer.innerHTML = '';
         const rules = Array.isArray(state.rules) && state.rules.length ? state.rules : DEFAULT_RULES;
@@ -476,10 +478,11 @@ form.addEventListener('submit', async (e) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                inbound_ip:    ip,
-                inbound_port:  port,
-                vless_link:    link,
-                routing_rules: collectRules(),
+                inbound_ip:       ip,
+                inbound_port:     port,
+                vless_link:       link,
+                block_bittorrent: document.getElementById('block_bittorrent').checked,
+                routing_rules:    collectRules(),
             }),
         });
 
@@ -503,8 +506,9 @@ form.addEventListener('submit', async (e) => {
 
 clearBtn.addEventListener('click', () => {
     form.reset();
-    document.getElementById('inbound_ip').value   = '0.0.0.0';
-    document.getElementById('inbound_port').value = '10808';
+    document.getElementById('inbound_ip').value         = '0.0.0.0';
+    document.getElementById('inbound_port').value       = '10808';
+    document.getElementById('block_bittorrent').checked = false;
     loadDefaultRules();
     hideAll();
     localStorage.removeItem(LS_KEY);
