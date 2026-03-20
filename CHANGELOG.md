@@ -11,7 +11,6 @@
 - VLESS link textarea auto-resizes to fit content
 - EN / RU language switcher added (default: English)
 - Version number displayed in page footer
-- Copyright added to page footer: © 2026 Yuriy Khachaturian
 - Hint text unified: "SOCKS5 address" / "SOCKS5 port"
 
 ### Features
