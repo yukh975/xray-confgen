@@ -29,6 +29,10 @@ $defaultOutbound = in_array($in['default_outbound'] ?? '', ['proxy', 'direct'], 
 $domainStrategy  = in_array($in['domain_strategy'] ?? '', ['IPIfNonMatch', 'IPOnDemand', 'AsIs'], true)
     ? $in['domain_strategy'] : 'IPIfNonMatch';
 $routingRules    = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
+$logEnabled      = (bool)($in['log_enabled'] ?? false);
+$logDir          = trim((string)($in['log_dir'] ?? ''));
+$logLevel        = in_array($in['log_level'] ?? '', ['debug', 'info', 'warning', 'error', 'none'], true)
+    ? $in['log_level'] : 'warning';
 
 if ($inboundIp === '' || filter_var($inboundIp, FILTER_VALIDATE_IP) === false) {
     err('Invalid inbound IP address');
@@ -43,7 +47,7 @@ if (!str_starts_with($vlessLink, 'vless://')) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -141,7 +145,7 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, array $routingRules, bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch'): array
+function buildConfig(string $ip, int $port, array $v, array $routingRules, bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning'): array
 {
     $destOverride = ['http', 'tls'];
     if ($blockBittorrent) {
@@ -190,8 +194,17 @@ function buildConfig(string $ip, int $port, array $v, array $routingRules, bool 
         $outbound['_comment'] = $v['name'];
     }
 
+    if ($logEnabled && $logDir !== '') {
+        $logPath = rtrim($logDir, '/\\') . '/xray-core.log';
+        $log = ['access' => $logPath, 'error' => $logPath, 'loglevel' => $logLevel];
+    } elseif ($logEnabled) {
+        $log = ['loglevel' => $logLevel];
+    } else {
+        $log = ['loglevel' => 'none'];
+    }
+
     $config = [
-        'log'       => ['loglevel' => 'warning'],
+        'log'       => $log,
         'inbounds'  => [$inbound],
         'outbounds' => [
             $outbound,

@@ -78,6 +78,8 @@
                 </div>
             </div>
 
+            <hr class="form-sep">
+
             <div class="field-group">
                 <label for="vless_link" data-i18n="vless_link_label"></label>
                 <textarea
@@ -89,6 +91,8 @@
                 <span class="hint" data-i18n="vless_link_hint"></span>
             </div>
 
+            <hr class="form-sep">
+
             <!-- Available databases -->
             <div class="section-block">
                 <div class="section-header">
@@ -98,6 +102,8 @@
                     <!-- populated by JS -->
                 </div>
             </div>
+
+            <hr class="form-sep">
 
             <!-- Routing rules -->
             <div class="section-block">
@@ -129,6 +135,35 @@
                 </label>
                 <div id="routing-rules">
                     <!-- populated by JS -->
+                </div>
+            </div>
+
+            <hr class="form-sep">
+
+            <!-- Logging -->
+            <div class="field-group">
+                <label class="toggle-row">
+                    <input type="checkbox" id="log_enabled" name="log_enabled">
+                    <span class="toggle-label" data-i18n="log_enabled_label"></span>
+                </label>
+                <div id="log-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px">
+                        <div class="field-group">
+                            <label for="log_dir" data-i18n="log_dir_label"></label>
+                            <input type="text" id="log_dir" name="log_dir" placeholder="/var/log/xray">
+                            <span class="hint" data-i18n="log_dir_hint"></span>
+                        </div>
+                        <div class="field-group field-group--port">
+                            <label for="log_level" data-i18n="log_level_label"></label>
+                            <select id="log_level">
+                                <option value="debug">debug</option>
+                                <option value="info">info</option>
+                                <option value="warning" selected>warning</option>
+                                <option value="error">error</option>
+                                <option value="none">none</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
 

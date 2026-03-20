@@ -96,6 +96,9 @@ function saveState() {
         block_bittorrent:  document.getElementById('block_bittorrent').checked,
         default_outbound:  document.getElementById('default_outbound').value,
         domain_strategy:   document.getElementById('domain_strategy').value,
+        log_enabled:       document.getElementById('log_enabled').checked,
+        log_dir:           document.getElementById('log_dir').value,
+        log_level:         document.getElementById('log_level').value,
         rules:             collectRules(),
     };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
@@ -124,6 +127,14 @@ const socks5AuthFields   = document.getElementById('socks5-auth-fields');
 
 socks5AuthCheckbox.addEventListener('change', () => {
     socks5AuthFields.classList.toggle('hidden', !socks5AuthCheckbox.checked);
+});
+
+// Toggle logging fields visibility
+const logEnabledCheckbox = document.getElementById('log_enabled');
+const logFields          = document.getElementById('log-fields');
+
+logEnabledCheckbox.addEventListener('change', () => {
+    logFields.classList.toggle('hidden', !logEnabledCheckbox.checked);
 });
 
 // ============================================================
@@ -521,6 +532,10 @@ addRuleBtn.addEventListener('click', () => {
         document.getElementById('block_bittorrent').checked  = state.block_bittorrent ?? false;
         document.getElementById('default_outbound').value    = state.default_outbound ?? 'proxy';
         document.getElementById('domain_strategy').value     = state.domain_strategy  ?? 'IPIfNonMatch';
+        document.getElementById('log_enabled').checked       = state.log_enabled       ?? false;
+        document.getElementById('log_dir').value             = state.log_dir           ?? '';
+        document.getElementById('log_level').value           = state.log_level         ?? 'warning';
+        logFields.classList.toggle('hidden', !state.log_enabled);
         autoResize(vlessTextarea);
 
         rulesContainer.innerHTML = '';
@@ -564,6 +579,9 @@ form.addEventListener('submit', async (e) => {
                 block_bittorrent:  document.getElementById('block_bittorrent').checked,
                 default_outbound:  document.getElementById('default_outbound').value,
                 domain_strategy:   document.getElementById('domain_strategy').value,
+                log_enabled:       document.getElementById('log_enabled').checked,
+                log_dir:           document.getElementById('log_dir').value.trim(),
+                log_level:         document.getElementById('log_level').value,
                 routing_rules:     collectRules(),
             }),
         });
@@ -597,6 +615,10 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('block_bittorrent').checked = false;
     document.getElementById('default_outbound').value   = 'proxy';
     document.getElementById('domain_strategy').value    = 'IPIfNonMatch';
+    document.getElementById('log_enabled').checked      = false;
+    document.getElementById('log_dir').value            = '';
+    document.getElementById('log_level').value          = 'warning';
+    logFields.classList.add('hidden');
     loadDefaultRules();
     hideAll();
     localStorage.removeItem(LS_KEY);
