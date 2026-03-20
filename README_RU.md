@@ -124,3 +124,9 @@ vless-parser/
 ## Лицензия
 
 [MIT](LICENSE.md)
+
+---
+
+## Автор
+
+Yuriy Khachaturian (powered by Claude.AI), 2026.
