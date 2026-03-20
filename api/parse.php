@@ -14,7 +14,7 @@ $raw = file_get_contents('php://input');
 $in  = json_decode($raw, true);
 
 if (!is_array($in)) {
-    err('Некорректный JSON в запросе');
+    err('Invalid JSON in request body');
 }
 
 $inboundIp       = trim((string)($in['inbound_ip']       ?? ''));
@@ -24,13 +24,13 @@ $blockBittorrent = (bool)($in['block_bittorrent']        ?? false);
 $routingRules    = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
 
 if ($inboundIp === '' || filter_var($inboundIp, FILTER_VALIDATE_IP) === false) {
-    err('Некорректный IP-адрес inbound');
+    err('Invalid inbound IP address');
 }
 if ($inboundPort < 1 || $inboundPort > 65535) {
-    err('Порт inbound должен быть в диапазоне 1–65535');
+    err('Inbound port must be in range 1–65535');
 }
 if (!str_starts_with($vlessLink, 'vless://')) {
-    err('Ссылка должна начинаться с vless://');
+    err('Link must start with vless://');
 }
 
 // --- Parse & build ---------------------------------------------------------
@@ -47,12 +47,12 @@ function parseVless(string $link): array
     $url = parse_url($link);
 
     if ($url === false || empty($url['host'])) {
-        err('Не удалось разобрать VLESS-ссылку');
+        err('Failed to parse VLESS link');
     }
 
     $uuid = $url['user'] ?? '';
     if ($uuid === '' || !isValidUuid($uuid)) {
-        err('UUID некорректен или отсутствует');
+        err('UUID is invalid or missing');
     }
 
     parse_str($url['query'] ?? '', $q);
@@ -61,20 +61,20 @@ function parseVless(string $link): array
     $security = $q['security'] ?? 'none';
     $flow     = $q['flow']     ?? '';
 
-    // flow несовместим с xhttp
+    // flow is not compatible with xhttp
     if ($network === 'xhttp') {
         $flow = '';
     }
 
     $result = [
-        'uuid'     => $uuid,
-        'host'     => $url['host'],
-        'port'     => (int)($url['port'] ?? 443),
-        'name'     => isset($url['fragment']) ? urldecode($url['fragment']) : '',
-        'network'  => $network,
-        'security' => $security,
-        'flow'     => $flow,
-        'transport' => parseTransport($network, $q, $url['host']),
+        'uuid'             => $uuid,
+        'host'             => $url['host'],
+        'port'             => (int)($url['port'] ?? 443),
+        'name'             => isset($url['fragment']) ? urldecode($url['fragment']) : '',
+        'network'          => $network,
+        'security'         => $security,
+        'flow'             => $flow,
+        'transport'        => parseTransport($network, $q, $url['host']),
         'securitySettings' => parseSecurity($security, $q, $url['host']),
     ];
 
@@ -82,7 +82,7 @@ function parseVless(string $link): array
 }
 
 /**
- * Разбирает параметры транспортного уровня в зависимости от network.
+ * Parses transport-level parameters based on the network type.
  */
 function parseTransport(string $network, array $q, string $remoteHost): array
 {
@@ -110,7 +110,7 @@ function parseTransport(string $network, array $q, string $remoteHost): array
 }
 
 /**
- * Разбирает параметры безопасности (TLS / Reality).
+ * Parses security parameters (TLS / Reality).
  */
 function parseSecurity(string $security, array $q, string $remoteHost): array
 {
@@ -289,13 +289,14 @@ function buildRouting(array $rules, bool $blockBittorrent = false): ?array
     if (empty($rules) && empty($xrayRules)) {
         return null;
     }
+
     $allowedActions = ['direct', 'proxy', 'block'];
 
     foreach ($rules as $rule) {
-        $type   = $rule['rule_type'] ?? '';
-        $db     = trim((string)($rule['db'] ?? ''));
+        $type = $rule['rule_type'] ?? '';
+        $db   = trim((string)($rule['db'] ?? ''));
         if ($db !== '' && !preg_match('/^[a-zA-Z0-9_\-]+\.dat$/', $db)) {
-            continue; // skip rule with invalid db name
+            continue; // skip rules with invalid db filename
         }
         $action = $rule['action'] ?? 'proxy';
 
@@ -311,7 +312,7 @@ function buildRouting(array $rules, bool $blockBittorrent = false): ?array
             continue;
         }
 
-        $prefix   = $type === 'ip' ? 'geoip' : 'geosite';
+        $prefix    = $type === 'ip' ? 'geoip' : 'geosite';
         $formatted = array_values(array_filter(array_map(
             fn($v) => formatGeoValue(trim((string)$v), $prefix, $db),
             $rawValues
@@ -340,30 +341,30 @@ function buildRouting(array $rules, bool $blockBittorrent = false): ?array
 }
 
 /**
- * Форматирует значение категории в нужный формат xray-core.
+ * Formats a category value into the xray-core routing format.
  *
- * Логика:
- *   - IP/CIDR (содержит точку или /) — возвращается как есть
- *   - Уже в формате ext:... — возвращается как есть
- *   - Уже с префиксом geosite:/geoip: — возвращается как есть
- *   - Иначе: "ru" + db="geosite_RU.dat" → "ext:geosite_RU.dat:ru"
- *            "ru" + db="geosite.dat"    → "geosite:ru"
+ * Rules:
+ *   - IP/CIDR (contains dot, colon, or slash) — returned as-is
+ *   - Already in ext:... format — returned as-is
+ *   - Already prefixed with geosite: or geoip: — returned as-is
+ *   - Otherwise: "ru" + db="geosite_RU.dat" → "ext:geosite_RU.dat:ru"
+ *                "ru" + db="geosite.dat"    → "geosite:ru"
  */
 function formatGeoValue(string $value, string $prefix, string $db): string
 {
-    // Уже полный формат — не трогаем
+    // Already a fully qualified format — leave as-is
     if (str_starts_with($value, 'ext:') ||
         str_starts_with($value, 'geosite:') ||
         str_starts_with($value, 'geoip:')) {
         return $value;
     }
 
-    // IP или CIDR — не трогаем
+    // IP address or CIDR — leave as-is
     if (str_contains($value, '.') || str_contains($value, ':') || str_contains($value, '/')) {
         return $value;
     }
 
-    // Категория без префикса
+    // Plain category name — build the appropriate prefix
     $defaultDb = $prefix . '.dat';
     if ($db === '' || $db === $defaultDb) {
         return $prefix . ':' . $value;

@@ -1,9 +1,115 @@
 // ============================================================
+//  Translations (i18n)
+// ============================================================
+
+const TRANSLATIONS = {
+    en: {
+        subtitle:               'Generate <code>config.json</code> for xray-core from a VLESS link',
+        inbound_ip_label:       'Inbound IP address',
+        inbound_ip_hint:        'IP address xray will listen on',
+        inbound_port_label:     'Inbound port',
+        inbound_port_hint:      'SOCKS5 proxy port (1–65535)',
+        vless_link_label:       'VLESS link',
+        vless_link_hint:        'Full VLESS link including parameters and name',
+        db_section_label:       'Available databases',
+        routing_label:          'Routing rules',
+        add_rule_btn:           '+ Add',
+        routing_hint:           'Rules are applied top to bottom',
+        block_bittorrent_label: 'Block BitTorrent protocol',
+        submit_btn:             'Generate config.json',
+        clear_btn:              'Clear',
+        copy_btn:               'Copy',
+        download_btn:           'Download',
+        copy_success:           '✓ Copied',
+        picker_empty:           'Select...',
+        picker_selected:        n => `${n} selected`,
+        picker_search:          'Search or enter custom value...',
+        picker_add:             v => `➕ Add «${v}»`,
+        picker_loading:         'Loading...',
+        remove_title:           'Remove',
+        err_vless_prefix:       'VLESS link must start with vless://',
+        err_server:             'Could not connect to server: ',
+        err_server_status:      'Server error: ',
+    },
+    ru: {
+        subtitle:               'Генерация <code>config.json</code> для xray-core из VLESS-ссылки',
+        inbound_ip_label:       'IP-адрес inbound',
+        inbound_ip_hint:        'IP-адрес, который будет слушать xray',
+        inbound_port_label:     'Порт inbound',
+        inbound_port_hint:      'Порт SOCKS5-прокси (1–65535)',
+        vless_link_label:       'VLESS-ссылка',
+        vless_link_hint:        'Полная VLESS-ссылка включая параметры и имя',
+        db_section_label:       'Доступные базы данных',
+        routing_label:          'Правила маршрутизации',
+        add_rule_btn:           '+ Добавить',
+        routing_hint:           'Правила применяются сверху вниз',
+        block_bittorrent_label: 'Блокировать протокол BitTorrent',
+        submit_btn:             'Сгенерировать config.json',
+        clear_btn:              'Очистить',
+        copy_btn:               'Копировать',
+        download_btn:           'Скачать',
+        copy_success:           '✓ Скопировано',
+        picker_empty:           'Выбрать...',
+        picker_selected:        n => `${n} выбрано`,
+        picker_search:          'Поиск или своё значение...',
+        picker_add:             v => `➕ Добавить «${v}»`,
+        picker_loading:         'Загрузка...',
+        remove_title:           'Удалить',
+        err_vless_prefix:       'VLESS-ссылка должна начинаться с vless://',
+        err_server:             'Не удалось связаться с сервером: ',
+        err_server_status:      'Ошибка сервера: ',
+    },
+};
+
+// ============================================================
+//  Language state
+// ============================================================
+
+const LS_LANG = 'vless_parser_lang';
+let currentLang = localStorage.getItem(LS_LANG) || 'en';
+
+function t(key, ...args) {
+    const val = TRANSLATIONS[currentLang][key];
+    return typeof val === 'function' ? val(...args) : (val ?? key);
+}
+
+function applyLang() {
+    document.documentElement.lang = currentLang;
+
+    // Update plain text elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+
+    // Update elements that contain HTML (e.g. subtitle with <code>)
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        el.innerHTML = t(el.dataset.i18nHtml);
+    });
+
+    // Highlight the active language button
+    document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
+    document.getElementById('lang-ru').classList.toggle('active', currentLang === 'ru');
+}
+
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem(LS_LANG, lang);
+    applyLang();
+
+    // Re-render rule rows so all dynamic picker strings update
+    const rules = collectRules();
+    rulesContainer.innerHTML = '';
+    rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+}
+
+document.getElementById('lang-en').addEventListener('click', () => setLang('en'));
+document.getElementById('lang-ru').addEventListener('click', () => setLang('ru'));
+
+// ============================================================
 //  Constants & defaults
 // ============================================================
 
 const DEFAULT_DATABASES = ['geosite.dat', 'geoip.dat']; // fallback if server unavailable
-
 
 const DEFAULT_RULES = [
     { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
@@ -48,7 +154,7 @@ function saveState() {
         inbound_port:     document.getElementById('inbound_port').value,
         vless_link:       document.getElementById('vless_link').value,
         block_bittorrent: document.getElementById('block_bittorrent').checked,
-        rules: collectRules(),
+        rules:            collectRules(),
     };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
@@ -78,7 +184,7 @@ function autoResize(el) {
 vlessTextarea.addEventListener('input', () => autoResize(vlessTextarea));
 
 // ============================================================
-//  Database manager
+//  Database list renderer
 // ============================================================
 
 function renderDatabases() {
@@ -94,11 +200,10 @@ function renderDatabases() {
     });
 }
 
+// Returns 'ip' for geoip-based databases, 'domain' for all others
 function dbToRuleType(db) {
     return db.startsWith('geoip') ? 'ip' : 'domain';
 }
-
-
 
 // ============================================================
 //  Tag cache
@@ -119,7 +224,7 @@ async function fetchTags(db) {
 }
 
 // ============================================================
-//  DB select builder
+//  Database select builder
 // ============================================================
 
 function buildDbSelect(selectedDb) {
@@ -160,21 +265,21 @@ function buildValuePicker(initDb, selectedValues = []) {
     wrapper.appendChild(trigger);
     wrapper.appendChild(dropdown);
 
-    // --- Trigger label ---
+    // Update the trigger button label based on selection state
     function updateTrigger() {
         if (selected.size === 0) {
-            trigger.textContent = 'Выбрать...';
+            trigger.textContent = t('picker_empty');
             trigger.classList.add('empty');
         } else if (selected.size === 1) {
             trigger.textContent = [...selected][0];
             trigger.classList.remove('empty');
         } else {
-            trigger.textContent = `${selected.size} выбрано`;
+            trigger.textContent = t('picker_selected', selected.size);
             trigger.classList.remove('empty');
         }
     }
 
-    // --- Chips (for values not present as checkboxes) ---
+    // Add a chip for values that are not present in the checkbox list
     function addChip(val) {
         if (chipsRow.querySelector(`[data-val="${CSS.escape(val)}"]`)) return;
         const chip = document.createElement('span');
@@ -194,6 +299,7 @@ function buildValuePicker(initDb, selectedValues = []) {
         chipsRow.appendChild(chip);
     }
 
+    // Ensure chips exist for all selected values not shown as checkboxes
     function syncChips() {
         selected.forEach(val => {
             const hasCheckbox = !!dropdown.querySelector(`.picker-item[data-value="${CSS.escape(val)}"]`);
@@ -201,17 +307,16 @@ function buildValuePicker(initDb, selectedValues = []) {
         });
     }
 
-    // --- Render checkboxes + search ---
+    // Render search input and checkbox list
     function renderCheckboxes(tags) {
         dropdown.querySelectorAll('.picker-search, .picker-item, .picker-sep, .picker-loading').forEach(el => el.remove());
 
-        // Search / custom input
         const searchWrap  = document.createElement('div');
         searchWrap.className = 'picker-search';
 
         const searchInput = document.createElement('input');
         searchInput.type         = 'text';
-        searchInput.placeholder  = 'Поиск или своё значение...';
+        searchInput.placeholder  = t('picker_search');
         searchInput.autocomplete = 'off';
 
         const noResult = document.createElement('div');
@@ -231,7 +336,7 @@ function buildValuePicker(initDb, selectedValues = []) {
                 const btn = document.createElement('button');
                 btn.type      = 'button';
                 btn.className = 'picker-add-custom';
-                btn.textContent = `➕ Добавить «${searchInput.value.trim()}»`;
+                btn.textContent = t('picker_add', searchInput.value.trim());
                 btn.addEventListener('click', () => {
                     const val = searchInput.value.trim();
                     selected.add(val);
@@ -264,6 +369,7 @@ function buildValuePicker(initDb, selectedValues = []) {
         dropdown.insertBefore(searchWrap, chipsRow);
 
         if (tags.length) {
+            // Checked items first (alphabetical), then unchecked (alphabetical)
             const checked   = [...selected].filter(v => tags.includes(v)).sort();
             const unchecked = tags.filter(v => !selected.has(v)).sort();
 
@@ -290,7 +396,6 @@ function buildValuePicker(initDb, selectedValues = []) {
                 return item;
             }
 
-            // Checked first, then separator, then unchecked
             if (checked.length) {
                 checked.forEach(tag => dropdown.insertBefore(makeItem(tag, true), chipsRow));
                 const sep1 = document.createElement('div');
@@ -310,26 +415,27 @@ function buildValuePicker(initDb, selectedValues = []) {
         searchInput.focus();
     }
 
-    // --- Open (async load) ---
+    // Open dropdown, loading tags from server on first open
     async function openDropdown(currentDb) {
         dropdown.classList.remove('hidden');
 
         if (knownTags === null) {
             const loading = document.createElement('div');
             loading.className   = 'picker-loading';
-            loading.textContent = 'Загрузка...';
+            loading.textContent = t('picker_loading');
             dropdown.insertBefore(loading, chipsRow);
 
             const tags = await fetchTags(currentDb);
             knownTags = tags;
             renderCheckboxes(knownTags);
         } else {
+            // Already loaded — just reset search
             const si = dropdown.querySelector('.picker-search input');
             if (si) { si.value = ''; si.focus(); si.dispatchEvent(new Event('input')); }
         }
     }
 
-    // --- Toggle ---
+    // Toggle dropdown open/close
     trigger.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = !dropdown.classList.contains('hidden');
@@ -362,7 +468,7 @@ function buildValuePicker(initDb, selectedValues = []) {
 // ============================================================
 
 function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule_type, value } = {}) {
-    // Back-compat
+    // Back-compat: support legacy single-value and rule_type fields
     if (!values.length && value) values = [value];
     if (!db && rule_type) db = rule_type === 'ip' ? 'geoip.dat' : 'geosite.dat';
 
@@ -383,9 +489,9 @@ function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule
     `;
 
     const removeBtn = document.createElement('button');
-    removeBtn.type      = 'button';
-    removeBtn.className = 'remove-btn';
-    removeBtn.title     = 'Удалить';
+    removeBtn.type        = 'button';
+    removeBtn.className   = 'remove-btn';
+    removeBtn.title       = t('remove_title');
     removeBtn.textContent = '✕';
 
     dbSelect.addEventListener('change', () => { picker.resetPicker(); saveState(); });
@@ -397,14 +503,6 @@ function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule
     row.appendChild(removeBtn);
 
     return row;
-}
-
-function renderAllRuleDbSelects() {
-    rulesContainer.querySelectorAll('.rule-row').forEach(row => {
-        const currentDb = row.querySelector('.rule-db')?.value ?? 'geosite.dat';
-        const newDbSel  = buildDbSelect(currentDb);
-        row.replaceChild(newDbSel, row.querySelector('.rule-db'));
-    });
 }
 
 function loadDefaultRules() {
@@ -436,7 +534,10 @@ addRuleBtn.addEventListener('click', () => {
 // ============================================================
 
 (async function init() {
-    // Load available databases from server
+    // Apply saved or default language first
+    applyLang();
+
+    // Load available databases from server, fall back to defaults
     let serverDbs = [];
     try {
         const res  = await fetch('api/databases.php');
@@ -481,7 +582,7 @@ form.addEventListener('submit', async (e) => {
     const link = document.getElementById('vless_link').value.trim();
 
     if (!link.startsWith('vless://')) {
-        showError('VLESS-ссылка должна начинаться с vless://');
+        showError(t('err_vless_prefix'));
         return;
     }
 
@@ -503,19 +604,19 @@ form.addEventListener('submit', async (e) => {
         const data = await res.json();
 
         if (!res.ok || data.error) {
-            showError(data.error ?? `Ошибка сервера: ${res.status}`);
+            showError(data.error ?? t('err_server_status') + res.status);
         } else {
             showResult(data);
         }
     } catch (err) {
-        showError('Не удалось связаться с сервером: ' + err.message);
+        showError(t('err_server') + err.message);
     } finally {
         submitBtn.disabled = false;
     }
 });
 
 // ============================================================
-//  Clear
+//  Clear button
 // ============================================================
 
 clearBtn.addEventListener('click', () => {
@@ -555,9 +656,9 @@ function hideAll() {
 
 copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(resultPre.textContent).then(() => {
-        const orig = copyBtn.textContent;
-        copyBtn.textContent = '✓ Скопировано';
-        setTimeout(() => { copyBtn.textContent = orig; }, 1500);
+        const label = copyBtn.querySelector('.btn-label');
+        label.textContent = t('copy_success');
+        setTimeout(() => { label.textContent = t('copy_btn'); }, 1500);
     });
 });
 

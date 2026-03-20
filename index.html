@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +8,25 @@
 </head>
 <body>
     <div class="container">
-        <h1>VLESS <span class="arrow">→</span> xray config</h1>
-        <p class="subtitle">Генерация <code>config.json</code> для xray-core из VLESS-ссылки</p>
+
+        <div class="page-header">
+            <div>
+                <h1>VLESS <span class="arrow">→</span> xray config</h1>
+                <p class="subtitle" data-i18n-html="subtitle"></p>
+            </div>
+            <div class="lang-switcher">
+                <button type="button" id="lang-en" class="lang-btn">EN</button>
+                <span class="lang-sep">|</span>
+                <button type="button" id="lang-ru" class="lang-btn">RU</button>
+            </div>
+        </div>
 
         <form id="vless-form" novalidate>
 
             <!-- Inbound -->
             <div class="field-row">
                 <div class="field-group">
-                    <label for="inbound_ip">IP-адрес inbound</label>
+                    <label for="inbound_ip" data-i18n="inbound_ip_label"></label>
                     <input
                         type="text"
                         id="inbound_ip"
@@ -26,11 +36,11 @@
                         pattern="^(\d{1,3}\.){3}\d{1,3}$"
                         required
                     >
-                    <span class="hint">IP-адрес, который будет слушать xray</span>
+                    <span class="hint" data-i18n="inbound_ip_hint"></span>
                 </div>
 
                 <div class="field-group field-group--port">
-                    <label for="inbound_port">Порт inbound</label>
+                    <label for="inbound_port" data-i18n="inbound_port_label"></label>
                     <input
                         type="number"
                         id="inbound_port"
@@ -41,26 +51,25 @@
                         max="65535"
                         required
                     >
-                    <span class="hint">Порт SOCKS5-прокси (1–65535)</span>
+                    <span class="hint" data-i18n="inbound_port_hint"></span>
                 </div>
             </div>
 
             <div class="field-group">
-                <label for="vless_link">VLESS-ссылка</label>
+                <label for="vless_link" data-i18n="vless_link_label"></label>
                 <textarea
                     id="vless_link"
                     name="vless_link"
                     placeholder="vless://uuid@host:port?security=tls&type=ws&path=/ws#name"
-                    rows="4"
                     required
                 ></textarea>
-                <span class="hint">Полная VLESS-ссылка включая параметры и имя</span>
+                <span class="hint" data-i18n="vless_link_hint"></span>
             </div>
 
             <!-- Available databases -->
             <div class="section-block">
                 <div class="section-header">
-                    <label>Доступные базы данных</label>
+                    <label data-i18n="db_section_label"></label>
                 </div>
                 <div id="db-list" class="db-list">
                     <!-- populated by JS -->
@@ -70,13 +79,13 @@
             <!-- Routing rules -->
             <div class="section-block">
                 <div class="section-header">
-                    <label>Правила маршрутизации</label>
-                    <button type="button" id="add-rule-btn" class="add-btn">+ Добавить</button>
+                    <label data-i18n="routing_label"></label>
+                    <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
                 </div>
-                <div class="hint" style="margin-bottom:6px">Правила применяются сверху вниз</div>
+                <div class="hint" style="margin-bottom:6px" data-i18n="routing_hint"></div>
                 <label class="toggle-row">
                     <input type="checkbox" id="block_bittorrent" name="block_bittorrent">
-                    <span class="toggle-label">Блокировать протокол BitTorrent</span>
+                    <span class="toggle-label" data-i18n="block_bittorrent_label"></span>
                 </label>
                 <div id="routing-rules">
                     <!-- populated by JS -->
@@ -85,9 +94,9 @@
 
             <div class="actions">
                 <button type="submit" id="submit-btn">
-                    <span class="btn-text">Сгенерировать config.json</span>
+                    <span class="btn-text" data-i18n="submit_btn"></span>
                 </button>
-                <button type="button" id="clear-btn" class="secondary">Очистить</button>
+                <button type="button" id="clear-btn" class="secondary" data-i18n="clear_btn"></button>
             </div>
         </form>
 
@@ -95,8 +104,8 @@
             <div class="result-header">
                 <span>config.json</span>
                 <div class="result-actions">
-                    <button id="copy-btn" class="icon-btn" title="Скопировать">⎘ Копировать</button>
-                    <button id="download-btn" class="icon-btn" title="Скачать">↓ Скачать</button>
+                    <button id="copy-btn" class="icon-btn">⎘ <span class="btn-label" data-i18n="copy_btn"></span></button>
+                    <button id="download-btn" class="icon-btn">↓ <span class="btn-label" data-i18n="download_btn"></span></button>
                 </div>
             </div>
             <pre id="result-json"></pre>
@@ -105,6 +114,8 @@
         <div id="error" class="error hidden">
             <span id="error-text"></span>
         </div>
+
+        <footer class="copyright">© 2026 Yuriy Khachaturian</footer>
     </div>
 
     <script src="assets/app.js"></script>

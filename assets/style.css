@@ -39,6 +39,57 @@ body {
     gap: 28px;
 }
 
+/* Page header with language switcher */
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+
+.lang-sep {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.lang-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 5px;
+}
+
+.lang-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+.lang-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Copyright footer */
+
+.copyright {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding-top: 4px;
+}
+
 h1 {
     font-size: 26px;
     font-weight: 700;

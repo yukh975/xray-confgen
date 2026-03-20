@@ -2,8 +2,8 @@
 declare(strict_types=1);
 header('Content-Type: application/json');
 
-// Path to the directory containing .dat files
-// Adjust to match your server installation
+// Path to the directory containing .dat files.
+// Adjust to match your server installation.
 const GEO_DIR = '/home/web/ip/www/vless-parser/db';
 
 // ---------------------------------------------------------------------------
@@ -17,18 +17,18 @@ function err(string $msg, int $code = 400): never {
 $db = trim((string)($_GET['db'] ?? ''));
 
 if ($db === '') {
-    err('Параметр db не указан');
+    err('Parameter db is required');
 }
 
 // Allow only safe filenames: letters, digits, underscores, hyphens, dots
 if (!preg_match('/^[a-zA-Z0-9_\-]+\.dat$/', $db)) {
-    err('Недопустимое имя файла');
+    err('Invalid filename');
 }
 
 $path = GEO_DIR . '/' . $db;
 
 if (!is_file($path)) {
-    err("Файл не найден: $db", 404);
+    err("File not found: $db", 404);
 }
 
 $tags = extractGeoTags($path);
@@ -53,7 +53,7 @@ function extractGeoTags(string $path): array
 {
     $data = file_get_contents($path);
     if ($data === false) {
-        err('Не удалось прочитать файл');
+        err('Failed to read file');
     }
 
     $tags = [];
@@ -88,8 +88,8 @@ function extractGeoTags(string $path): array
 }
 
 /**
- * Reads field 1 string from the beginning of a protobuf blob.
- * Country code is always the first field in GeoSite / GeoIP.
+ * Reads the field-1 string from the beginning of a protobuf blob.
+ * The country_code is always the first field in GeoSite / GeoIP entries.
  */
 function readFirstString(string $blob): ?string
 {
@@ -109,7 +109,7 @@ function readFirstString(string $blob): ?string
             return substr($blob, $i, $strLen);
         }
 
-        // Skip any other field before field 1 (shouldn't happen, but be safe)
+        // Skip any field that appears before field 1 (shouldn't happen, but be safe)
         if (!skipField($blob, $i, $len, $wireType)) break;
     }
 
