@@ -5,7 +5,7 @@ const TRANSLATIONS = {
         inbound_ip_hint:        'SOCKS5 address',
         inbound_port_label:     'Inbound port',
         inbound_port_hint:      'SOCKS5 port',
-        vless_link_label:       'VLESS link',
+        vless_link_label:       'VLESS URL',
         vless_link_hint:        'Full VLESS link including parameters and name',
         socks5_auth_label:      'Enable SOCKS5 authentication',
         socks5_user_label:      'Username',
