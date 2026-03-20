@@ -161,6 +161,10 @@ label {
     letter-spacing: 0.2px;
 }
 
+.field-group > label {
+    padding-left: 1px;
+}
+
 input[type="text"],
 input[type="number"],
 input[type="password"],
