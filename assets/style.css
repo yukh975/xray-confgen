@@ -191,12 +191,11 @@ button.secondary:hover {
 
 .add-db-form {
     display: grid;
-    grid-template-columns: 90px 1fr auto auto;
+    grid-template-columns: 1fr auto auto;
     gap: 6px;
     align-items: center;
 }
 
-.add-db-form select,
 .add-db-form input {
     padding: 7px 10px;
     font-size: 13px;
@@ -218,12 +217,6 @@ button.secondary:hover {
     border-radius: 6px;
     padding: 4px 8px 4px 10px;
     font-size: 12px;
-}
-
-.db-tag-type {
-    color: var(--accent);
-    font-weight: 600;
-    font-family: var(--mono);
 }
 
 .db-tag-name {

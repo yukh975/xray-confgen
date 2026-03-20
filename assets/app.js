@@ -2,10 +2,7 @@
 //  Constants & defaults
 // ============================================================
 
-const DEFAULT_DATABASES = [
-    { type: 'geosite', name: 'geosite.dat' },
-    { type: 'geoip',   name: 'geoip.dat'   },
-];
+const DEFAULT_DATABASES = ['geosite.dat', 'geoip.dat'];
 
 const DEFAULT_RULES = [
     { rule_type: 'ip',     db: 'geoip.dat',   value: 'private',            action: 'direct' },
@@ -31,7 +28,6 @@ const errorText      = document.getElementById('error-text');
 const dbListEl       = document.getElementById('db-list');
 const addDbBtn       = document.getElementById('add-db-btn');
 const addDbForm      = document.getElementById('add-db-form');
-const newDbType      = document.getElementById('new-db-type');
 const newDbName      = document.getElementById('new-db-name');
 const confirmDbBtn   = document.getElementById('confirm-db-btn');
 const cancelDbBtn    = document.getElementById('cancel-db-btn');
@@ -82,13 +78,11 @@ document.addEventListener('change', saveState);
 
 function renderDatabases() {
     dbListEl.innerHTML = '';
-    databases.forEach((db, idx) => {
+    databases.forEach((name, idx) => {
         const tag = document.createElement('div');
         tag.className = 'db-tag';
-        tag.dataset.idx = idx;
         tag.innerHTML = `
-            <span class="db-tag-type">${db.type}</span>
-            <span class="db-tag-name">${db.name}</span>
+            <span class="db-tag-name">${name}</span>
             <button type="button" class="remove-btn db-remove" title="Удалить">✕</button>
         `;
         tag.querySelector('.db-remove').addEventListener('click', () => {
@@ -103,7 +97,7 @@ function renderDatabases() {
 
 function getDbsForType(ruleType) {
     const prefix = ruleType === 'ip' ? 'geoip' : 'geosite';
-    return databases.filter(db => db.type === prefix);
+    return databases.filter(name => name.startsWith(prefix));
 }
 
 addDbBtn.addEventListener('click', () => {
@@ -120,13 +114,12 @@ confirmDbBtn.addEventListener('click', () => {
     const name = newDbName.value.trim();
     if (!name) return;
 
-    const type = newDbType.value;
-    if (databases.some(db => db.name === name)) {
+    if (databases.includes(name)) {
         newDbName.focus();
         return;
     }
 
-    databases.push({ type, name });
+    databases.push(name);
     renderDatabases();
     renderAllRuleDbSelects();
     addDbForm.classList.add('hidden');
@@ -148,11 +141,11 @@ function buildDbSelect(ruleType, selectedDb) {
     const select = document.createElement('select');
     select.className = 'rule-db';
 
-    dbs.forEach(db => {
+    dbs.forEach(name => {
         const opt = document.createElement('option');
-        opt.value = db.name;
-        opt.textContent = db.name;
-        if (db.name === selectedDb) opt.selected = true;
+        opt.value = name;
+        opt.textContent = name;
+        if (name === selectedDb) opt.selected = true;
         select.appendChild(opt);
     });
 
