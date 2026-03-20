@@ -14,33 +14,35 @@
         <form id="vless-form" novalidate>
 
             <!-- Inbound -->
-            <div class="field-group">
-                <label for="inbound_ip">IP-адрес inbound</label>
-                <input
-                    type="text"
-                    id="inbound_ip"
-                    name="inbound_ip"
-                    placeholder="0.0.0.0"
-                    value="0.0.0.0"
-                    pattern="^(\d{1,3}\.){3}\d{1,3}$"
-                    required
-                >
-                <span class="hint">IP-адрес, который будет слушать xray</span>
-            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label for="inbound_ip">IP-адрес inbound</label>
+                    <input
+                        type="text"
+                        id="inbound_ip"
+                        name="inbound_ip"
+                        placeholder="0.0.0.0"
+                        value="0.0.0.0"
+                        pattern="^(\d{1,3}\.){3}\d{1,3}$"
+                        required
+                    >
+                    <span class="hint">IP-адрес, который будет слушать xray</span>
+                </div>
 
-            <div class="field-group">
-                <label for="inbound_port">Порт inbound</label>
-                <input
-                    type="number"
-                    id="inbound_port"
-                    name="inbound_port"
-                    placeholder="10808"
-                    value="10808"
-                    min="1"
-                    max="65535"
-                    required
-                >
-                <span class="hint">Порт SOCKS5-прокси (1–65535)</span>
+                <div class="field-group field-group--port">
+                    <label for="inbound_port">Порт inbound</label>
+                    <input
+                        type="number"
+                        id="inbound_port"
+                        name="inbound_port"
+                        placeholder="10808"
+                        value="10808"
+                        min="1"
+                        max="65535"
+                        required
+                    >
+                    <span class="hint">Порт SOCKS5-прокси (1–65535)</span>
+                </div>
             </div>
 
             <div class="field-group">

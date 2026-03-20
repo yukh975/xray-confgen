@@ -75,6 +75,20 @@ form {
     gap: 20px;
 }
 
+.field-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.field-row .field-group {
+    flex: 1;
+}
+
+.field-row .field-group--port {
+    flex: 0 0 160px;
+}
+
 .field-group {
     display: flex;
     flex-direction: column;
