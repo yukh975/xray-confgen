@@ -55,6 +55,26 @@
                 </div>
             </div>
 
+            <!-- SOCKS5 auth -->
+            <div class="field-group">
+                <label class="toggle-row">
+                    <input type="checkbox" id="socks5_auth" name="socks5_auth">
+                    <span class="toggle-label" data-i18n="socks5_auth_label"></span>
+                </label>
+                <div id="socks5-auth-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px">
+                        <div class="field-group">
+                            <label for="socks5_user" data-i18n="socks5_user_label"></label>
+                            <input type="text" id="socks5_user" name="socks5_user" autocomplete="off">
+                        </div>
+                        <div class="field-group">
+                            <label for="socks5_pass" data-i18n="socks5_pass_label"></label>
+                            <input type="password" id="socks5_pass" name="socks5_pass" autocomplete="new-password">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="field-group">
                 <label for="vless_link" data-i18n="vless_link_label"></label>
                 <textarea

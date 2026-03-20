@@ -282,6 +282,12 @@ button.secondary:hover {
 }
 
 
+/* Auth fields (shown when SOCKS5 auth is enabled) */
+
+.auth-fields {
+    overflow: hidden;
+}
+
 /* Toggle checkbox row */
 
 .toggle-row {

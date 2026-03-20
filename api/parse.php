@@ -19,6 +19,9 @@ if (!is_array($in)) {
 
 $inboundIp       = trim((string)($in['inbound_ip']       ?? ''));
 $inboundPort     = (int)($in['inbound_port']             ?? 0);
+$socks5Auth      = (bool)($in['socks5_auth']             ?? false);
+$socks5User      = trim((string)($in['socks5_user']      ?? ''));
+$socks5Pass      = (string)($in['socks5_pass']           ?? '');
 $vlessLink       = trim((string)($in['vless_link']       ?? ''));
 $blockBittorrent = (bool)($in['block_bittorrent']        ?? false);
 $routingRules    = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
@@ -36,7 +39,7 @@ if (!str_starts_with($vlessLink, 'vless://')) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules, $blockBittorrent);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -134,11 +137,17 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, array $routingRules, bool $blockBittorrent = false): array
+function buildConfig(string $ip, int $port, array $v, array $routingRules, bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = ''): array
 {
     $destOverride = ['http', 'tls'];
     if ($blockBittorrent) {
         $destOverride[] = 'bittorrent';
+    }
+
+    $socksSettings = ['auth' => 'noauth', 'udp' => true];
+    if ($socks5Auth && $socks5User !== '') {
+        $socksSettings['auth']     = 'password';
+        $socksSettings['accounts'] = [['user' => $socks5User, 'pass' => $socks5Pass]];
     }
 
     $inbound = [
@@ -146,11 +155,8 @@ function buildConfig(string $ip, int $port, array $v, array $routingRules, bool 
         'listen'   => $ip,
         'port'     => $port,
         'protocol' => 'socks',
-        'settings' => [
-            'auth' => 'noauth',
-            'udp'  => true,
-        ],
-        'sniffing' => [
+        'settings' => $socksSettings,
+        'sniffing'  => [
             'enabled'      => true,
             'destOverride' => $destOverride,
         ],

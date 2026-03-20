@@ -89,6 +89,9 @@ function saveState() {
     const state = {
         inbound_ip:       document.getElementById('inbound_ip').value,
         inbound_port:     document.getElementById('inbound_port').value,
+        socks5_auth:      document.getElementById('socks5_auth').checked,
+        socks5_user:      document.getElementById('socks5_user').value,
+        socks5_pass:      document.getElementById('socks5_pass').value,
         vless_link:       document.getElementById('vless_link').value,
         block_bittorrent: document.getElementById('block_bittorrent').checked,
         rules:            collectRules(),
@@ -106,6 +109,14 @@ function loadState() {
 
 document.addEventListener('input', saveState);
 document.addEventListener('change', saveState);
+
+// Toggle SOCKS5 auth fields visibility
+const socks5AuthCheckbox = document.getElementById('socks5_auth');
+const socks5AuthFields   = document.getElementById('socks5-auth-fields');
+
+socks5AuthCheckbox.addEventListener('change', () => {
+    socks5AuthFields.classList.toggle('hidden', !socks5AuthCheckbox.checked);
+});
 
 // ============================================================
 //  Auto-resize textarea
@@ -494,6 +505,10 @@ addRuleBtn.addEventListener('click', () => {
     if (state) {
         document.getElementById('inbound_ip').value         = state.inbound_ip       ?? '0.0.0.0';
         document.getElementById('inbound_port').value       = state.inbound_port     ?? '10808';
+        document.getElementById('socks5_auth').checked      = state.socks5_auth      ?? false;
+        document.getElementById('socks5_user').value        = state.socks5_user      ?? '';
+        document.getElementById('socks5_pass').value        = state.socks5_pass      ?? '';
+        socks5AuthFields.classList.toggle('hidden', !state.socks5_auth);
         document.getElementById('vless_link').value         = state.vless_link       ?? '';
         document.getElementById('block_bittorrent').checked = state.block_bittorrent ?? false;
         autoResize(vlessTextarea);
@@ -532,6 +547,9 @@ form.addEventListener('submit', async (e) => {
             body: JSON.stringify({
                 inbound_ip:       ip,
                 inbound_port:     port,
+                socks5_auth:      document.getElementById('socks5_auth').checked,
+                socks5_user:      document.getElementById('socks5_user').value.trim(),
+                socks5_pass:      document.getElementById('socks5_pass').value,
                 vless_link:       link,
                 block_bittorrent: document.getElementById('block_bittorrent').checked,
                 routing_rules:    collectRules(),
@@ -560,6 +578,10 @@ clearBtn.addEventListener('click', () => {
     form.reset();
     document.getElementById('inbound_ip').value         = '0.0.0.0';
     document.getElementById('inbound_port').value       = '10808';
+    document.getElementById('socks5_auth').checked      = false;
+    document.getElementById('socks5_user').value        = '';
+    document.getElementById('socks5_pass').value        = '';
+    socks5AuthFields.classList.add('hidden');
     document.getElementById('block_bittorrent').checked = false;
     loadDefaultRules();
     hideAll();
