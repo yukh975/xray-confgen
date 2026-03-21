@@ -99,6 +99,30 @@ const TRANSLATIONS = {
   <li><strong>Action</strong> — what to do with matching traffic: <code>proxy</code>, <code>direct</code>, or <code>block</code>.</li>
 </ul>
 <p>A typical setup: route local and Russian traffic directly, block ads, and proxy everything else. Add rules in that order and set the default outbound to <code>proxy</code>.</p>
+
+<h3>DNS</h3>
+<p>This section lets you configure a custom DNS resolver for xray-core. When disabled, the system DNS is used. Configuring DNS is recommended to avoid leaks and to direct different domains to different resolvers.</p>
+
+<p><strong>Fallback DNS</strong> — the resolver used when no DNS rule matches the queried domain. Choose one of the presets (Google, Cloudflare, Yandex) or enter a custom address.</p>
+
+<p><strong>Query strategy</strong> — controls which IP versions xray-core requests from DNS:</p>
+<ul>
+  <li><code>UseIPv4</code> — request only A records (IPv4). Recommended for most setups.</li>
+  <li><code>UseIPv6</code> — request only AAAA records (IPv6).</li>
+  <li><code>UseIP</code> — request both A and AAAA records.</li>
+  <li><code>ForceIPv4</code> / <code>ForceIPv6</code> / <code>ForceIP</code> — same as above, but also override the result even if the server returns the opposite record type.</li>
+  <li><code>useSystem</code> — delegate all DNS resolution to the operating system.</li>
+</ul>
+
+<p><strong>Domain strategy</strong> — controls how xray-core resolves domains when applying DNS rules, using the same logic as the routing domain strategy (<code>IPIfNonMatch</code>, <code>IPOnDemand</code>, <code>AsIs</code>).</p>
+
+<p><strong>DNS servers</strong> — the list of resolvers xray-core will use. Each server can be:</p>
+<ul>
+  <li>A <strong>preset</strong> — Google DoH, Cloudflare DoH, Yandex DoH (all use IP addresses to avoid bootstrap dependency), or their plain DNS counterparts.</li>
+  <li>A <strong>custom</strong> server — enter a name (used as a label in rules) and an address: a plain IP (<code>8.8.8.8</code>) or a DoH URL (<code>https://1.1.1.1/dns-query</code>).</li>
+</ul>
+
+<p><strong>DNS rules</strong> work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all <code>ru</code> domains to Yandex DNS and resolve everything else via Cloudflare DoH.</p>
 `,
         remove_title:           'Remove',
         err_vless_prefix:       'VLESS URI must start with vless://',
@@ -205,6 +229,30 @@ const TRANSLATIONS = {
   <li><strong>Действие</strong> — что делать с совпавшим трафиком: <code>proxy</code>, <code>direct</code> или <code>block</code>.</li>
 </ul>
 <p>Типичная настройка: локальный и российский трафик — напрямую, рекламу — блокировать, остальное — через прокси. Добавьте правила в таком порядке и установите маршрут по умолчанию <code>proxy</code>.</p>
+
+<h3>DNS</h3>
+<p>Раздел позволяет настроить собственный DNS-резолвер для xray-core. Если раздел отключён, используется системный DNS. Настройка DNS рекомендуется для предотвращения утечек и для направления разных доменов в разные резолверы.</p>
+
+<p><strong>Резервный DNS</strong> — резолвер, который используется когда ни одно DNS-правило не совпало с запрашиваемым доменом. Выберите один из пресетов (Google, Cloudflare, Yandex) или введите свой адрес.</p>
+
+<p><strong>Стратегия запросов</strong> — определяет, какие типы IP-адресов xray-core запрашивает у DNS:</p>
+<ul>
+  <li><code>UseIPv4</code> — запрашивать только A-записи (IPv4). Рекомендуется для большинства случаев.</li>
+  <li><code>UseIPv6</code> — запрашивать только AAAA-записи (IPv6).</li>
+  <li><code>UseIP</code> — запрашивать и A, и AAAA-записи.</li>
+  <li><code>ForceIPv4</code> / <code>ForceIPv6</code> / <code>ForceIP</code> — то же, что выше, но результат принудительно приводится к нужному типу, даже если сервер вернул другой.</li>
+  <li><code>useSystem</code> — передать все DNS-запросы операционной системе.</li>
+</ul>
+
+<p><strong>Стратегия доменов</strong> — определяет, как xray-core резолвит домены при применении DNS-правил, по той же логике, что и стратегия доменов в маршрутизации (<code>IPIfNonMatch</code>, <code>IPOnDemand</code>, <code>AsIs</code>).</p>
+
+<p><strong>DNS-серверы</strong> — список резолверов, которые будет использовать xray-core. Каждый сервер может быть:</p>
+<ul>
+  <li><strong>Пресетом</strong> — Google DoH, Cloudflare DoH, Yandex DoH (все используют IP-адреса, чтобы не зависеть от начального резолвера) или их обычные DNS-аналоги.</li>
+  <li><strong>Кастомным</strong> — укажите имя (используется как метка в правилах) и адрес: обычный IP (<code>8.8.8.8</code>) или DoH URL (<code>https://1.1.1.1/dns-query</code>).</li>
+</ul>
+
+<p><strong>Правила DNS</strong> работают так же, как правила маршрутизации, но вместо действия указывают на один из настроенных DNS-серверов. Каждое правило состоит из базы данных, одного или нескольких тегов и целевого сервера. Например, можно отправлять все домены зоны <code>ru</code> на Yandex DNS, а всё остальное резолвить через Cloudflare DoH.</p>
 `,
         remove_title:           'Удалить',
         err_vless_prefix:       'VLESS URI должен начинаться с vless://',
