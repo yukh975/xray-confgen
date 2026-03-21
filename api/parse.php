@@ -33,8 +33,8 @@ $routingRules    = is_array($in['routing_rules'] ?? null) ? $in['routing_rules']
 $dnsEnabled      = (bool)($in['dns_enabled']  ?? false);
 $dnsQueryStrategy = in_array($in['dns_query_strategy'] ?? '', ['UseIP', 'UseIPv4', 'UseIPv6', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'useSystem'], true)
     ? $in['dns_query_strategy'] : 'UseIPv4';
-$dnsDomainMatcher = in_array($in['dns_domain_matcher'] ?? '', ['hybrid', 'linear'], true)
-    ? $in['dns_domain_matcher'] : 'hybrid';
+$dnsDomainStrategy = in_array($in['dns_domain_strategy'] ?? '', ['AsIs', 'IPIfNonMatch', 'IPOnDemand'], true)
+    ? $in['dns_domain_strategy'] : 'IPIfNonMatch';
 $dnsFallback     = trim((string)($in['dns_fallback'] ?? ''));
 $dnsServers      = is_array($in['dns_servers'] ?? null) ? $in['dns_servers'] : [];
 $dnsRules        = is_array($in['dns_rules']   ?? null) ? $in['dns_rules']   : [];
@@ -56,7 +56,7 @@ if (!str_starts_with($vlessLink, 'vless://')) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainMatcher, $dnsFallback, $dnsServers, $dnsRules);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -154,7 +154,7 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainMatcher = 'hybrid', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = []): array
+function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = []): array
 {
     $destOverride = ['http', 'tls'];
     if ($blockBittorrent) {
@@ -230,7 +230,7 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
     }
 
     if ($dnsEnabled) {
-        $dns = buildDns($dnsServers, $dnsRules, $dnsFallback, $dnsQueryStrategy, $dnsDomainMatcher);
+        $dns = buildDns($dnsServers, $dnsRules, $dnsFallback, $dnsQueryStrategy, $dnsDomainStrategy);
         if ($dns !== null) {
             $config['dns'] = $dns;
         }
@@ -413,7 +413,7 @@ function formatGeoValue(string $value, string $prefix, string $db): string
     return 'ext:' . $db . ':' . $value;
 }
 
-function buildDns(array $serverDefs, array $rules, string $fallback, string $queryStrategy = 'UseIPv4', string $domainMatcher = 'hybrid'): ?array
+function buildDns(array $serverDefs, array $rules, string $fallback, string $queryStrategy = 'UseIPv4', string $domainStrategy = 'IPIfNonMatch'): ?array
 {
     $presets = [
         'google_doh'     => 'https://dns.google/dns-query',
@@ -475,8 +475,8 @@ function buildDns(array $serverDefs, array $rules, string $fallback, string $que
     if ($queryStrategy !== 'UseIPv4') {
         $result['queryStrategy'] = $queryStrategy;
     }
-    if ($domainMatcher !== 'hybrid') {
-        $result['domainMatcher'] = $domainMatcher;
+    if ($domainStrategy !== 'IPIfNonMatch') {
+        $result['domainStrategy'] = $domainStrategy;
     }
 
     return $result;

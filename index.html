@@ -180,10 +180,11 @@
                             </select>
                         </div>
                         <div class="field-group">
-                            <label for="dns_domain_matcher" data-i18n="dns_domain_matcher_label"></label>
-                            <select id="dns_domain_matcher">
-                                <option value="hybrid" selected>hybrid</option>
-                                <option value="linear">linear</option>
+                            <label for="dns_domain_strategy" data-i18n="dns_domain_strategy_label"></label>
+                            <select id="dns_domain_strategy">
+                                <option value="AsIs">AsIs</option>
+                                <option value="IPIfNonMatch" selected>IPIfNonMatch</option>
+                                <option value="IPOnDemand">IPOnDemand</option>
                             </select>
                         </div>
                     </div>

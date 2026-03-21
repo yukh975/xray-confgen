@@ -441,6 +441,7 @@ button.secondary:hover {
     cursor: pointer;
 }
 
+#routing-fields,
 #dns-fields {
     display: flex;
     flex-direction: column;

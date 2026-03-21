@@ -122,7 +122,7 @@ function saveState() {
         domain_strategy:   document.getElementById('domain_strategy').value,
         dns_enabled:          document.getElementById('dns_enabled').checked,
         dns_query_strategy:    document.getElementById('dns_query_strategy').value,
-        dns_domain_matcher:    document.getElementById('dns_domain_matcher').value,
+        dns_domain_strategy:    document.getElementById('dns_domain_strategy').value,
         dns_fallback_preset:  dnsFallbackPreset.value,
         dns_fallback_custom:  dnsFallbackCustom.value,
         dns_servers:          collectDnsServers(),
@@ -782,7 +782,7 @@ addDnsRuleBtn.addEventListener('click', () => {
         document.getElementById('domain_strategy').value     = state.domain_strategy  ?? 'IPIfNonMatch';
         document.getElementById('dns_enabled').checked = state.dns_enabled  ?? false;
         document.getElementById('dns_query_strategy').value   = state.dns_query_strategy  ?? 'UseIPv4';
-        document.getElementById('dns_domain_matcher').value   = state.dns_domain_matcher  ?? 'hybrid';
+        document.getElementById('dns_domain_strategy').value   = state.dns_domain_strategy  ?? 'IPIfNonMatch';
         dnsFallbackPreset.value = state.dns_fallback_preset ?? '8.8.8.8';
         dnsFallbackCustom.value = state.dns_fallback_custom ?? '';
         dnsFallbackCustom.classList.toggle('hidden', dnsFallbackPreset.value !== 'custom');
@@ -845,7 +845,7 @@ form.addEventListener('submit', async (e) => {
                 domain_strategy:   document.getElementById('domain_strategy').value,
                 dns_enabled:          document.getElementById('dns_enabled').checked,
                 dns_query_strategy:    document.getElementById('dns_query_strategy').value,
-                dns_domain_matcher:    document.getElementById('dns_domain_matcher').value,
+                dns_domain_strategy:    document.getElementById('dns_domain_strategy').value,
                 dns_fallback:         getFallbackValue(),
                 dns_servers:          collectDnsServers(),
                 dns_rules:            collectDnsRules(),
@@ -889,7 +889,7 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('domain_strategy').value    = 'IPIfNonMatch';
     document.getElementById('dns_enabled').checked = false;
     document.getElementById('dns_query_strategy').value  = 'UseIPv4';
-    document.getElementById('dns_domain_matcher').value  = 'hybrid';
+    document.getElementById('dns_domain_strategy').value  = 'IPIfNonMatch';
     dnsFallbackPreset.value = '8.8.8.8';
     dnsFallbackCustom.value = '';
     dnsFallbackCustom.classList.add('hidden');
