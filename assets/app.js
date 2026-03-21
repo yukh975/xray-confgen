@@ -60,6 +60,9 @@ const DNS_PRESETS = {
     google_doh:     'https://dns.google/dns-query',
     cloudflare_doh: 'https://cloudflare-dns.com/dns-query',
     yandex_doh:     'https://dns.yandex.com/dns-query',
+    google_dns:     '8.8.8.8',
+    cloudflare_dns: '1.1.1.1',
+    yandex_dns:     '77.88.8.8',
 };
 
 const DEFAULT_RULES = [
@@ -87,10 +90,11 @@ const errorText      = document.getElementById('error-text');
 const dbListEl       = document.getElementById('db-list');
 const rulesContainer = document.getElementById('routing-rules');
 const addRuleBtn     = document.getElementById('add-rule-btn');
-const dnsServersEl   = document.getElementById('dns-servers-list');
-const dnsRulesEl     = document.getElementById('dns-rules-list');
+const dnsServersEl    = document.getElementById('dns-servers-list');
+const dnsRulesEl      = document.getElementById('dns-rules-list');
 const addDnsServerBtn = document.getElementById('add-dns-server-btn');
 const addDnsRuleBtn   = document.getElementById('add-dns-rule-btn');
+const routingFields   = document.getElementById('routing-fields');
 
 // ============================================================
 //  State
@@ -112,14 +116,16 @@ function saveState() {
         socks5_user:       document.getElementById('socks5_user').value,
         socks5_pass:       document.getElementById('socks5_pass').value,
         vless_link:        document.getElementById('vless_link').value,
+        routing_enabled:   document.getElementById('routing_enabled').checked,
         block_bittorrent:  document.getElementById('block_bittorrent').checked,
         default_outbound:  document.getElementById('default_outbound').value,
         domain_strategy:   document.getElementById('domain_strategy').value,
-        dns_enabled:         document.getElementById('dns_enabled').checked,
-        dns_fallback_preset: dnsFallbackPreset.value,
-        dns_fallback_custom: dnsFallbackCustom.value,
-        dns_servers:         collectDnsServers(),
-        dns_rules:           collectDnsRules(),
+        dns_enabled:          document.getElementById('dns_enabled').checked,
+        dns_query_strategy:   document.getElementById('dns_query_strategy').value,
+        dns_fallback_preset:  dnsFallbackPreset.value,
+        dns_fallback_custom:  dnsFallbackCustom.value,
+        dns_servers:          collectDnsServers(),
+        dns_rules:            collectDnsRules(),
         log_enabled:       document.getElementById('log_enabled').checked,
         log_dir:           document.getElementById('log_dir').value,
         log_level:         document.getElementById('log_level').value,
@@ -165,6 +171,13 @@ function getFallbackValue() {
         ? dnsFallbackCustom.value.trim()
         : dnsFallbackPreset.value;
 }
+
+// Toggle routing fields visibility
+const routingEnabledCheckbox = document.getElementById('routing_enabled');
+
+routingEnabledCheckbox.addEventListener('change', () => {
+    routingFields.classList.toggle('hidden', !routingEnabledCheckbox.checked);
+});
 
 // Toggle DNS fields visibility
 const dnsEnabledCheckbox = document.getElementById('dns_enabled');
@@ -297,6 +310,8 @@ function buildValuePicker(initDb, selectedValues = []) {
             trigger.textContent = t('picker_selected', selected.size);
             trigger.classList.remove('empty');
         }
+        const clearAllBtn = dropdown.querySelector('.picker-clear-all');
+        if (clearAllBtn) clearAllBtn.classList.toggle('hidden', selected.size === 0);
     }
 
     // Add a chip for values that are not present in the checkbox list
@@ -334,10 +349,27 @@ function buildValuePicker(initDb, selectedValues = []) {
         const searchWrap  = document.createElement('div');
         searchWrap.className = 'picker-search';
 
+        const searchRow = document.createElement('div');
+        searchRow.className = 'picker-search-row';
+
         const searchInput = document.createElement('input');
         searchInput.type         = 'text';
         searchInput.placeholder  = t('picker_search');
         searchInput.autocomplete = 'off';
+
+        const clearAllBtn = document.createElement('button');
+        clearAllBtn.type      = 'button';
+        clearAllBtn.className = 'picker-clear-all' + (selected.size === 0 ? ' hidden' : '');
+        clearAllBtn.title     = 'Clear all';
+        clearAllBtn.textContent = '✕';
+        clearAllBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selected.clear();
+            chipsRow.innerHTML = '';
+            dropdown.querySelectorAll('.picker-item input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+            updateTrigger();
+            saveState();
+        });
 
         const noResult = document.createElement('div');
         noResult.className = 'picker-no-result hidden';
@@ -384,7 +416,9 @@ function buildValuePicker(initDb, selectedValues = []) {
             e.stopPropagation();
         });
 
-        searchWrap.appendChild(searchInput);
+        searchRow.appendChild(searchInput);
+        searchRow.appendChild(clearAllBtn);
+        searchWrap.appendChild(searchRow);
         searchWrap.appendChild(noResult);
         dropdown.insertBefore(searchWrap, chipsRow);
 
@@ -556,6 +590,8 @@ addRuleBtn.addEventListener('click', () => {
 function getServerLabel(row, idx) {
     const preset = row.querySelector('.dns-preset').value;
     if (preset !== 'custom') return t('dns_preset_' + preset);
+    const name = row.querySelector('.dns-name')?.value.trim();
+    if (name) return name;
     const val = row.querySelector('.dns-custom').value.trim();
     return val || `${t('dns_preset_custom')} ${idx + 1}`;
 }
@@ -579,16 +615,19 @@ function updateRuleServerSelects() {
     });
 }
 
-function createDnsServerRow({ preset = 'google_doh', custom = '' } = {}) {
+function createDnsServerRow({ preset = 'google_doh', custom = '', name = '' } = {}) {
     const row = document.createElement('div');
     row.className = 'dns-server-row';
 
     const presetSelect = document.createElement('select');
     presetSelect.className = 'dns-preset';
     [
-        ['google_doh',     t('dns_preset_google')],
-        ['cloudflare_doh', t('dns_preset_cloudflare')],
-        ['yandex_doh',     t('dns_preset_yandex')],
+        ['google_doh',     t('dns_preset_google_doh')],
+        ['cloudflare_doh', t('dns_preset_cloudflare_doh')],
+        ['yandex_doh',     t('dns_preset_yandex_doh')],
+        ['google_dns',     t('dns_preset_google_dns')],
+        ['cloudflare_dns', t('dns_preset_cloudflare_dns')],
+        ['yandex_dns',     t('dns_preset_yandex_dns')],
         ['custom',         t('dns_preset_custom')],
     ].forEach(([val, label]) => {
         const opt = document.createElement('option');
@@ -598,18 +637,30 @@ function createDnsServerRow({ preset = 'google_doh', custom = '' } = {}) {
         presetSelect.appendChild(opt);
     });
 
+    const customFields = document.createElement('div');
+    customFields.className = 'dns-custom-fields' + (preset !== 'custom' ? ' hidden' : '');
+
+    const nameInput = document.createElement('input');
+    nameInput.type        = 'text';
+    nameInput.className   = 'dns-name';
+    nameInput.placeholder = 'Name';
+    nameInput.value       = name;
+
     const customInput = document.createElement('input');
     customInput.type        = 'text';
     customInput.className   = 'dns-custom';
     customInput.placeholder = '8.8.8.8 or https://...';
     customInput.value       = custom;
-    customInput.classList.toggle('hidden', preset !== 'custom');
+
+    customFields.appendChild(nameInput);
+    customFields.appendChild(customInput);
 
     presetSelect.addEventListener('change', () => {
-        customInput.classList.toggle('hidden', presetSelect.value !== 'custom');
+        customFields.classList.toggle('hidden', presetSelect.value !== 'custom');
         updateRuleServerSelects();
         saveState();
     });
+    nameInput.addEventListener('input',  () => { updateRuleServerSelects(); saveState(); });
     customInput.addEventListener('input', () => { updateRuleServerSelects(); saveState(); });
 
     const removeBtn = document.createElement('button');
@@ -620,7 +671,7 @@ function createDnsServerRow({ preset = 'google_doh', custom = '' } = {}) {
     removeBtn.addEventListener('click', () => { row.remove(); updateRuleServerSelects(); saveState(); });
 
     row.appendChild(presetSelect);
-    row.appendChild(customInput);
+    row.appendChild(customFields);
     row.appendChild(removeBtn);
 
     return row;
@@ -642,9 +693,9 @@ function createDnsRuleRow({ db = 'geosite.dat', values = [], server_idx = 0 } = 
         const opt = document.createElement('option');
         opt.value = i;
         opt.textContent = label;
-        if (i === server_idx) opt.selected = true;
         serverSelect.appendChild(opt);
     });
+    serverSelect.value = server_idx;
 
     const removeBtn = document.createElement('button');
     removeBtn.type        = 'button';
@@ -666,7 +717,8 @@ function createDnsRuleRow({ db = 'geosite.dat', values = [], server_idx = 0 } = 
 function collectDnsServers() {
     return [...dnsServersEl.querySelectorAll('.dns-server-row')].map(row => ({
         preset: row.querySelector('.dns-preset').value,
-        custom: row.querySelector('.dns-custom').value.trim(),
+        name:   row.querySelector('.dns-name')?.value.trim() ?? '',
+        custom: row.querySelector('.dns-custom')?.value.trim() ?? '',
     }));
 }
 
@@ -722,10 +774,13 @@ addDnsRuleBtn.addEventListener('click', () => {
         document.getElementById('socks5_pass').value        = state.socks5_pass      ?? '';
         socks5AuthFields.classList.toggle('hidden', !state.socks5_auth);
         document.getElementById('vless_link').value          = state.vless_link       ?? '';
+        document.getElementById('routing_enabled').checked    = state.routing_enabled  ?? false;
+        routingFields.classList.toggle('hidden', !state.routing_enabled);
         document.getElementById('block_bittorrent').checked  = state.block_bittorrent ?? false;
         document.getElementById('default_outbound').value    = state.default_outbound ?? 'proxy';
         document.getElementById('domain_strategy').value     = state.domain_strategy  ?? 'IPIfNonMatch';
         document.getElementById('dns_enabled').checked = state.dns_enabled  ?? false;
+        document.getElementById('dns_query_strategy').value  = state.dns_query_strategy ?? 'UseIP';
         dnsFallbackPreset.value = state.dns_fallback_preset ?? '8.8.8.8';
         dnsFallbackCustom.value = state.dns_fallback_custom ?? '';
         dnsFallbackCustom.classList.toggle('hidden', dnsFallbackPreset.value !== 'custom');
@@ -782,13 +837,15 @@ form.addEventListener('submit', async (e) => {
                 socks5_user:      document.getElementById('socks5_user').value.trim(),
                 socks5_pass:      document.getElementById('socks5_pass').value,
                 vless_link:       link,
+                routing_enabled:   document.getElementById('routing_enabled').checked,
                 block_bittorrent:  document.getElementById('block_bittorrent').checked,
                 default_outbound:  document.getElementById('default_outbound').value,
                 domain_strategy:   document.getElementById('domain_strategy').value,
-                dns_enabled:  document.getElementById('dns_enabled').checked,
-                dns_fallback: getFallbackValue(),
-                dns_servers:  collectDnsServers(),
-                dns_rules:    collectDnsRules(),
+                dns_enabled:          document.getElementById('dns_enabled').checked,
+                dns_query_strategy:   document.getElementById('dns_query_strategy').value,
+                dns_fallback:         getFallbackValue(),
+                dns_servers:          collectDnsServers(),
+                dns_rules:            collectDnsRules(),
                 log_enabled:       document.getElementById('log_enabled').checked,
                 log_dir:           document.getElementById('log_dir').value.trim(),
                 log_level:         document.getElementById('log_level').value,
@@ -822,10 +879,13 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('socks5_user').value        = '';
     document.getElementById('socks5_pass').value        = '';
     socks5AuthFields.classList.add('hidden');
+    document.getElementById('routing_enabled').checked   = false;
+    routingFields.classList.add('hidden');
     document.getElementById('block_bittorrent').checked = false;
     document.getElementById('default_outbound').value   = 'proxy';
     document.getElementById('domain_strategy').value    = 'IPIfNonMatch';
     document.getElementById('dns_enabled').checked = false;
+    document.getElementById('dns_query_strategy').value = 'UseIP';
     dnsFallbackPreset.value = '8.8.8.8';
     dnsFallbackCustom.value = '';
     dnsFallbackCustom.classList.add('hidden');
@@ -845,29 +905,39 @@ clearBtn.addEventListener('click', () => {
 //  Result helpers
 // ============================================================
 
+function closeResult() {
+    resultBox.classList.add('hidden');
+    errorBackdrop.classList.add('hidden');
+}
+
 function closeError() {
     errorBox.classList.add('hidden');
     errorBackdrop.classList.add('hidden');
 }
 
+document.getElementById('result-close').addEventListener('click', closeResult);
 document.getElementById('error-close').addEventListener('click', closeError);
-errorBackdrop.addEventListener('click', closeError);
+errorBackdrop.addEventListener('click', () => {
+    closeResult();
+    closeError();
+});
 
 function showError(msg) {
     errorText.textContent = msg;
+    resultBox.classList.add('hidden');
     errorBox.classList.remove('hidden');
     errorBackdrop.classList.remove('hidden');
-    resultBox.classList.add('hidden');
 }
 
 function showResult(json) {
     resultPre.textContent = JSON.stringify(json, null, 2);
-    resultBox.classList.remove('hidden');
     errorBox.classList.add('hidden');
+    resultBox.classList.remove('hidden');
+    errorBackdrop.classList.remove('hidden');
 }
 
 function hideAll() {
-    resultBox.classList.add('hidden');
+    closeResult();
     closeError();
 }
 

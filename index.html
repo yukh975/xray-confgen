@@ -106,33 +106,39 @@
             <!-- Routing -->
             <div class="section-title">Routing</div>
 
-            <div class="section-block">
-                <div class="field-row" style="margin-bottom:6px">
-                    <div class="field-group">
-                        <label for="default_outbound" data-i18n="default_outbound_label"></label>
-                        <select id="default_outbound">
-                            <option value="proxy">proxy</option>
-                            <option value="direct">direct</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label for="domain_strategy" data-i18n="domain_strategy_label"></label>
-                        <select id="domain_strategy">
-                            <option value="IPIfNonMatch">IPIfNonMatch</option>
-                            <option value="IPOnDemand">IPOnDemand</option>
-                            <option value="AsIs">AsIs</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="hint" style="margin-bottom:6px" data-i18n="routing_hint"></div>
+            <div class="field-group">
                 <label class="toggle-row">
-                    <input type="checkbox" id="block_bittorrent" name="block_bittorrent">
-                    <span class="toggle-label" data-i18n="block_bittorrent_label"></span>
+                    <input type="checkbox" id="routing_enabled" name="routing_enabled">
+                    <span class="toggle-label" data-i18n="routing_enabled_label"></span>
                 </label>
-                <div id="routing-rules">
-                    <!-- populated by JS -->
+                <div id="routing-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px; margin-bottom:6px">
+                        <div class="field-group">
+                            <label for="default_outbound" data-i18n="default_outbound_label"></label>
+                            <select id="default_outbound">
+                                <option value="proxy">proxy</option>
+                                <option value="direct">direct</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label for="domain_strategy" data-i18n="domain_strategy_label"></label>
+                            <select id="domain_strategy">
+                                <option value="IPIfNonMatch">IPIfNonMatch</option>
+                                <option value="IPOnDemand">IPOnDemand</option>
+                                <option value="AsIs">AsIs</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="hint" style="margin-bottom:6px" data-i18n="routing_hint"></div>
+                    <label class="toggle-row">
+                        <input type="checkbox" id="block_bittorrent" name="block_bittorrent">
+                        <span class="toggle-label" data-i18n="block_bittorrent_label"></span>
+                    </label>
+                    <div id="routing-rules">
+                        <!-- populated by JS -->
+                    </div>
+                    <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
                 </div>
-                <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
             </div>
 
             <!-- DNS -->
@@ -144,6 +150,32 @@
                     <span class="toggle-label" data-i18n="dns_enabled_label"></span>
                 </label>
                 <div id="dns-fields" class="auth-fields hidden">
+
+                    <!-- Fallback + Query strategy -->
+                    <div class="field-row" style="margin-top:10px; margin-bottom:6px">
+                        <div class="field-group">
+                            <label for="dns_fallback_preset" data-i18n="dns_fallback_label"></label>
+                            <div class="dns-fallback-row">
+                                <select id="dns_fallback_preset">
+                                    <option value="8.8.8.8">8.8.8.8 (Google)</option>
+                                    <option value="8.8.4.4">8.8.4.4 (Google)</option>
+                                    <option value="1.1.1.1">1.1.1.1 (Cloudflare)</option>
+                                    <option value="1.0.0.1">1.0.0.1 (Cloudflare)</option>
+                                    <option value="9.9.9.9">9.9.9.9 (Quad9)</option>
+                                    <option value="custom" data-i18n="dns_preset_custom"></option>
+                                </select>
+                                <input type="text" id="dns_fallback_custom" class="dns-custom hidden" placeholder="8.8.8.8">
+                            </div>
+                        </div>
+                        <div class="field-group field-group--level">
+                            <label for="dns_query_strategy" data-i18n="dns_query_strategy_label"></label>
+                            <select id="dns_query_strategy">
+                                <option value="UseIP">UseIP</option>
+                                <option value="UseIPv4">UseIPv4</option>
+                                <option value="UseIPv6">UseIPv6</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <!-- DNS servers -->
                     <div class="dns-subsection-label" data-i18n="dns_servers_label"></div>
@@ -158,23 +190,6 @@
                         <!-- populated by JS -->
                     </div>
                     <button type="button" id="add-dns-rule-btn" class="add-btn" data-i18n="add_dns_rule_btn"></button>
-
-                    <!-- Fallback -->
-                    <div class="field-group">
-                        <label for="dns_fallback_preset" data-i18n="dns_fallback_label"></label>
-                        <div class="dns-server-row">
-                            <select id="dns_fallback_preset">
-                                <option value="8.8.8.8">8.8.8.8 (Google)</option>
-                                <option value="8.8.4.4">8.8.4.4 (Google)</option>
-                                <option value="1.1.1.1">1.1.1.1 (Cloudflare)</option>
-                                <option value="1.0.0.1">1.0.0.1 (Cloudflare)</option>
-                                <option value="9.9.9.9">9.9.9.9 (Quad9)</option>
-                                <option value="custom" data-i18n="dns_preset_custom"></option>
-                            </select>
-                            <input type="text" id="dns_fallback_custom" class="dns-custom hidden" placeholder="8.8.8.8">
-                        </div>
-                        <span class="hint" data-i18n="dns_fallback_hint"></span>
-                    </div>
 
                 </div>
             </div>
@@ -222,6 +237,7 @@
                 <div class="result-actions">
                     <button id="copy-btn" class="icon-btn">⎘ <span class="btn-label" data-i18n="copy_btn"></span></button>
                     <button id="download-btn" class="icon-btn">↓ <span class="btn-label" data-i18n="download_btn"></span></button>
+                    <button type="button" id="result-close" class="result-close">✕</button>
                 </div>
             </div>
             <pre id="result-json"></pre>
