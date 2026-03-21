@@ -4,7 +4,7 @@
 
 # Changelog
 
-## v1.0.2 — 2026-03-20
+## v1.0.2 — 2026-03-21
 
 ### UI
 - Password reveal button uses SVG icons (open / crossed-out eye) that toggle on click
