@@ -17,6 +17,20 @@
     --radius:    10px;
     --font:      'Inter', system-ui, -apple-system, sans-serif;
     --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --btn-secondary-hover: #3a3e57;
+}
+
+[data-theme="light"] {
+    --bg:        #f0f2f8;
+    --surface:   #ffffff;
+    --border:    #d0d5e8;
+    --accent:    #4a6cf7;
+    --accent-hover: #6a8cff;
+    --text:      #1a1d2e;
+    --muted:     #7077a0;
+    --success:   #2ea872;
+    --error:     #e53e3e;
+    --btn-secondary-hover: #e0e3f0;
 }
 
 body {
@@ -108,6 +122,62 @@ body {
 .help-btn:hover {
     background: var(--accent);
     color: #fff;
+}
+
+.theme-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.theme-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+/* Presets dropdown */
+
+.preset-wrap {
+    position: relative;
+}
+
+.preset-dropdown {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    z-index: 100;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    min-width: 180px;
+    overflow: hidden;
+    animation: modal-in 0.12s ease;
+}
+
+.preset-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 16px;
+    transition: background 0.1s;
+}
+
+.preset-item:hover {
+    background: var(--bg);
+    color: var(--accent);
 }
 
 /* Help modal */
@@ -388,7 +458,7 @@ button.secondary {
 
 button.secondary:hover {
     color: var(--text);
-    background: #3a3e57;
+    background: var(--btn-secondary-hover);
 }
 
 /* Section blocks */
