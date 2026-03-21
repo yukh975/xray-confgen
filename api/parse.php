@@ -42,6 +42,11 @@ $logEnabled      = (bool)($in['log_enabled'] ?? false);
 $logDir          = trim((string)($in['log_dir'] ?? ''));
 $logLevel        = in_array($in['log_level'] ?? '', ['debug', 'info', 'warning', 'error', 'none'], true)
     ? $in['log_level'] : 'warning';
+$sniffingEnabled      = (bool)($in['sniffing_enabled'] ?? true);
+$sniffingDestOverride = is_array($in['sniffing_dest_override'] ?? null)
+    ? array_values(array_filter(array_map('strval', $in['sniffing_dest_override']), fn($v) => in_array($v, ['http', 'tls', 'quic', 'bittorrent'], true)))
+    : ['http', 'tls'];
+$sniffingRouteOnly    = (bool)($in['sniffing_route_only'] ?? false);
 
 if ($inboundIp === '' || filter_var($inboundIp, FILTER_VALIDATE_IP) === false) {
     err('Invalid inbound IP address');
@@ -56,7 +61,7 @@ if (!str_starts_with($vlessLink, 'vless://')) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -154,13 +159,8 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = []): array
+function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false): array
 {
-    $destOverride = ['http', 'tls'];
-    if ($blockBittorrent) {
-        $destOverride[] = 'bittorrent';
-    }
-
     $socksSettings = ['auth' => 'noauth', 'udp' => true];
     if ($socks5Auth && $socks5User !== '') {
         $socksSettings['auth']     = 'password';
@@ -173,11 +173,15 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
         'port'     => $port,
         'protocol' => 'socks',
         'settings' => $socksSettings,
-        'sniffing'  => [
-            'enabled'      => true,
-            'destOverride' => $destOverride,
-        ],
     ];
+
+    if ($sniffingEnabled && !empty($sniffingDestOverride)) {
+        $sniffing = ['enabled' => true, 'destOverride' => array_values($sniffingDestOverride)];
+        if ($sniffingRouteOnly) {
+            $sniffing['routeOnly'] = true;
+        }
+        $inbound['sniffing'] = $sniffing;
+    }
 
     $userEntry = ['id' => $v['uuid'], 'encryption' => 'none'];
     if ($v['flow'] !== '') {

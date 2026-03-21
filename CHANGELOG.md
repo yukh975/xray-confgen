@@ -20,6 +20,7 @@
 - "VLESS URL" renamed to "VLESS URI" everywhere: field label, subtitle, help content
 
 ### Features
+- **Sniffing section** added between VLESS and Databases: enable toggle (default: on), protocol checkboxes (`http`, `tls`, `quic`, `bittorrent`), and `routeOnly` option; sniffing config is only emitted when the section is enabled
 - **Import config.json** button: load an existing `config.json` back into the form — all fields (inbound, VLESS URI, routing rules, DNS, logging) are populated automatically; the configuration can then be adjusted and regenerated
 - **DNS server deduplication**: each preset can appear in the list only once; clicking *Add server* auto-selects the first unused preset; changing an existing server to a preset already in the list shows an error and reverts the selection
 - **Mobile layout**: the interface is fully responsive on smartphones — field rows stack vertically, rule rows reflow to two lines, touch targets enlarged, iOS auto-zoom prevented

@@ -105,6 +105,35 @@
                 <span class="hint" data-i18n="vless_link_hint"></span>
             </div>
 
+            <!-- Sniffing -->
+            <div class="section-title">Sniffing</div>
+
+            <div class="field-group">
+                <label class="toggle-row">
+                    <input type="checkbox" id="sniffing_enabled" name="sniffing_enabled" checked>
+                    <span class="toggle-label" data-i18n="sniffing_enabled_label"></span>
+                </label>
+                <div id="sniffing-fields" class="auth-fields hidden">
+                    <div class="field-group" style="margin-top:10px">
+                        <label data-i18n="sniffing_dest_override_label"></label>
+                        <div class="sniffing-checkboxes">
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_http" checked> http</label>
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_tls" checked> tls</label>
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_quic"> quic</label>
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_bittorrent"> bittorrent</label>
+                        </div>
+                        <span class="hint" data-i18n="sniffing_dest_override_hint"></span>
+                    </div>
+                    <div class="field-group" style="margin-top:8px">
+                        <label class="toggle-row">
+                            <input type="checkbox" id="sniffing_route_only">
+                            <span class="toggle-label" data-i18n="sniffing_route_only_label"></span>
+                        </label>
+                        <span class="hint" data-i18n="sniffing_route_only_hint"></span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Databases -->
             <div class="section-title">Databases</div>
 

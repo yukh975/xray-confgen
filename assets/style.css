@@ -597,6 +597,32 @@ button.secondary:hover {
     font-weight: 500;
 }
 
+/* Sniffing destOverride checkboxes */
+
+.sniffing-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 4px;
+}
+
+.sniff-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.sniff-check input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
 /* Routing rules */
 
 .add-btn {

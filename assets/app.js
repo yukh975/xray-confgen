@@ -192,6 +192,12 @@ function saveState() {
         socks5_user:       document.getElementById('socks5_user').value,
         socks5_pass:       document.getElementById('socks5_pass').value,
         vless_link:        document.getElementById('vless_link').value,
+        sniffing_enabled:          document.getElementById('sniffing_enabled').checked,
+        sniffing_dest_http:        document.getElementById('sniffing_dest_http').checked,
+        sniffing_dest_tls:         document.getElementById('sniffing_dest_tls').checked,
+        sniffing_dest_quic:        document.getElementById('sniffing_dest_quic').checked,
+        sniffing_dest_bittorrent:  document.getElementById('sniffing_dest_bittorrent').checked,
+        sniffing_route_only:       document.getElementById('sniffing_route_only').checked,
         routing_enabled:   document.getElementById('routing_enabled').checked,
         block_bittorrent:  document.getElementById('block_bittorrent').checked,
         default_outbound:  document.getElementById('default_outbound').value,
@@ -248,6 +254,14 @@ function getFallbackValue() {
         ? dnsFallbackCustom.value.trim()
         : dnsFallbackPreset.value;
 }
+
+// Toggle sniffing fields visibility
+const sniffingEnabledCheckbox = document.getElementById('sniffing_enabled');
+const sniffingFields          = document.getElementById('sniffing-fields');
+
+sniffingEnabledCheckbox.addEventListener('change', () => {
+    sniffingFields.classList.toggle('hidden', !sniffingEnabledCheckbox.checked);
+});
 
 // Toggle routing fields visibility
 const routingEnabledCheckbox = document.getElementById('routing_enabled');
@@ -857,6 +871,13 @@ function applyState(state) {
     document.getElementById('socks5_pass').value         = state.socks5_pass      ?? '';
     socks5AuthFields.classList.toggle('hidden', !state.socks5_auth);
     document.getElementById('vless_link').value          = state.vless_link       ?? '';
+    document.getElementById('sniffing_enabled').checked         = state.sniffing_enabled         ?? true;
+    document.getElementById('sniffing_dest_http').checked       = state.sniffing_dest_http       ?? true;
+    document.getElementById('sniffing_dest_tls').checked        = state.sniffing_dest_tls        ?? true;
+    document.getElementById('sniffing_dest_quic').checked       = state.sniffing_dest_quic       ?? false;
+    document.getElementById('sniffing_dest_bittorrent').checked = state.sniffing_dest_bittorrent ?? false;
+    document.getElementById('sniffing_route_only').checked      = state.sniffing_route_only      ?? false;
+    sniffingFields.classList.toggle('hidden', !(state.sniffing_enabled ?? true));
     document.getElementById('routing_enabled').checked   = state.routing_enabled  ?? false;
     routingFields.classList.toggle('hidden', !state.routing_enabled);
     document.getElementById('block_bittorrent').checked  = state.block_bittorrent ?? false;
@@ -963,6 +984,14 @@ form.addEventListener('submit', async (e) => {
                 socks5_user:      document.getElementById('socks5_user').value.trim(),
                 socks5_pass:      document.getElementById('socks5_pass').value,
                 vless_link:       link,
+                sniffing_enabled:      document.getElementById('sniffing_enabled').checked,
+                sniffing_dest_override: [
+                    document.getElementById('sniffing_dest_http').checked      && 'http',
+                    document.getElementById('sniffing_dest_tls').checked       && 'tls',
+                    document.getElementById('sniffing_dest_quic').checked      && 'quic',
+                    document.getElementById('sniffing_dest_bittorrent').checked && 'bittorrent',
+                ].filter(Boolean),
+                sniffing_route_only:   document.getElementById('sniffing_route_only').checked,
                 routing_enabled:   document.getElementById('routing_enabled').checked,
                 block_bittorrent:  document.getElementById('block_bittorrent').checked,
                 default_outbound:  document.getElementById('default_outbound').value,
@@ -1006,6 +1035,13 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('socks5_user').value        = '';
     document.getElementById('socks5_pass').value        = '';
     socks5AuthFields.classList.add('hidden');
+    document.getElementById('sniffing_enabled').checked         = true;
+    document.getElementById('sniffing_dest_http').checked       = true;
+    document.getElementById('sniffing_dest_tls').checked        = true;
+    document.getElementById('sniffing_dest_quic').checked       = false;
+    document.getElementById('sniffing_dest_bittorrent').checked = false;
+    document.getElementById('sniffing_route_only').checked      = false;
+    sniffingFields.classList.remove('hidden');
     document.getElementById('routing_enabled').checked   = false;
     routingFields.classList.add('hidden');
     document.getElementById('block_bittorrent').checked = false;
@@ -1164,6 +1200,12 @@ function getShareUrl() {
         socks5_user:         document.getElementById('socks5_user').value,
         socks5_pass:         document.getElementById('socks5_pass').value,
         vless_link:          document.getElementById('vless_link').value,
+        sniffing_enabled:          document.getElementById('sniffing_enabled').checked,
+        sniffing_dest_http:        document.getElementById('sniffing_dest_http').checked,
+        sniffing_dest_tls:         document.getElementById('sniffing_dest_tls').checked,
+        sniffing_dest_quic:        document.getElementById('sniffing_dest_quic').checked,
+        sniffing_dest_bittorrent:  document.getElementById('sniffing_dest_bittorrent').checked,
+        sniffing_route_only:       document.getElementById('sniffing_route_only').checked,
         routing_enabled:     document.getElementById('routing_enabled').checked,
         block_bittorrent:    document.getElementById('block_bittorrent').checked,
         default_outbound:    document.getElementById('default_outbound').value,
@@ -1214,6 +1256,25 @@ function parseConfigJson(config) {
         state.socks5_auth  = false;
         state.socks5_user  = '';
         state.socks5_pass  = '';
+    }
+
+    // --- Sniffing ---
+    const sniffing = inbound?.sniffing;
+    if (sniffing) {
+        state.sniffing_enabled         = sniffing.enabled !== false;
+        const dest                     = sniffing.destOverride ?? [];
+        state.sniffing_dest_http       = dest.includes('http');
+        state.sniffing_dest_tls        = dest.includes('tls');
+        state.sniffing_dest_quic       = dest.includes('quic');
+        state.sniffing_dest_bittorrent = dest.includes('bittorrent');
+        state.sniffing_route_only      = sniffing.routeOnly === true;
+    } else {
+        state.sniffing_enabled         = false;
+        state.sniffing_dest_http       = true;
+        state.sniffing_dest_tls        = true;
+        state.sniffing_dest_quic       = false;
+        state.sniffing_dest_bittorrent = false;
+        state.sniffing_route_only      = false;
     }
 
     // --- VLESS URI reconstruction ---

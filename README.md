@@ -62,6 +62,18 @@ The VLESS URL encodes all the parameters needed to connect to the remote server.
 
 Supported security types: `none`, `tls`, `reality`. The fragment after `#` is used as a human-readable name for the connection and is stored in the config as a comment.
 
+### Sniffing
+
+Sniffing allows xray-core to inspect the first bytes of inbound traffic and determine the application-layer protocol. The detected protocol is used for more precise routing and, if needed, to override the destination address extracted from the protocol handshake. Enabled by default.
+
+**Detect protocols (destOverride)** — the protocols xray-core will attempt to identify:
+- `http` — plain HTTP/1.x traffic.
+- `tls` — TLS handshake; xray-core extracts the SNI from ClientHello for routing. Recommended to keep enabled.
+- `quic` — QUIC/HTTP3 traffic.
+- `bittorrent` — BitTorrent protocol; required if you want to route or block torrents by protocol.
+
+**Route only (routeOnly)** — when enabled, the detected protocol is used for routing only. xray-core will not replace the original destination address with the one extracted from the protocol handshake.
+
 ### Databases
 
 This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.
