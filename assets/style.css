@@ -1184,7 +1184,7 @@ pre#result-json {
        Row 1: [db select] [action] [remove]
        Row 2: [value picker — full width]          */
     .rule-row {
-        grid-template-columns: 1fr 80px 32px;
+        grid-template-columns: 1fr 70px 32px;
         grid-template-rows: auto auto;
     }
 
@@ -1205,6 +1205,14 @@ pre#result-json {
     .dns-rule-row > *:nth-child(2) { grid-column: 1/-1; grid-row: 2; }
     .dns-rule-row > *:nth-child(3) { grid-column: 2;    grid-row: 1; }
     .dns-rule-row > *:nth-child(4) { grid-column: 3;    grid-row: 1; }
+
+    /* Compact padding on rule selects so long db names (geosite_RU.dat) fit */
+    .rule-row select,
+    .dns-rule-row select {
+        padding-left: 6px;
+        padding-right: 22px;
+        background-position: right 5px center;
+    }
 
     /* DNS server custom fields: stack name + address vertically */
     .dns-server-row {
