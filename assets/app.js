@@ -13,12 +13,14 @@ function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(LS_THEME, theme);
     const btn = document.getElementById('theme-btn');
-    if (theme === 'dark') {
-        btn.innerHTML = ICON_SUN;
-        btn.title = t('theme_to_light');
-    } else {
-        btn.innerHTML = ICON_MOON;
-        btn.title = t('theme_to_dark');
+    if (btn) {
+        if (theme === 'dark') {
+            btn.innerHTML = ICON_SUN;
+            btn.title = t('theme_to_light');
+        } else {
+            btn.innerHTML = ICON_MOON;
+            btn.title = t('theme_to_dark');
+        }
     }
 }
 
