@@ -10,9 +10,9 @@
 [![Nginx](https://img.shields.io/badge/web-Nginx%20%2B%20PHP--FPM-009639)](https://nginx.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
 
-**A web tool for generating `config.json` for [xray-core](https://github.com/XTLS/Xray-core) from a VLESS link.**
+**A web tool for generating `config.json` for [xray-core](https://github.com/XTLS/Xray-core) from a VLESS URI.**
 
-Paste a VLESS link, configure the SOCKS5 inbound parameters and routing rules — and get a ready-to-use `config.json` to download or copy.
+Paste a VLESS URI, configure the SOCKS5 inbound parameters and routing rules — and get a ready-to-use `config.json` to download or copy.
 
 ---
 
@@ -24,7 +24,7 @@ Current development version is available at **https://yukh.net/xray-confgen/**
 
 ## Usage
 
-For a basic setup, just paste your **VLESS URL** into the corresponding field and click **«Generate config.json»**. That's it — the file is ready to use with xray-core.
+For a basic setup, just paste your **VLESS URI** into the corresponding field and click **«Generate config.json»**. That's it — the file is ready to use with xray-core.
 
 However, we recommend taking a few extra minutes to fine-tune the client configuration. The sections below cover the available options.
 
@@ -115,6 +115,10 @@ This section lets you configure a custom DNS resolver for xray-core. When disabl
 - A **custom** server — enter a name (used as a label in rules) and an address: a plain IP (`8.8.8.8`) or a DoH URL (`https://1.1.1.1/dns-query`).
 
 **DNS rules** work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all `ru` domains to Yandex DNS and resolve everything else via Cloudflare DoH.
+
+### Share
+
+The **Share** button encodes the entire form state — VLESS URI, inbound settings, routing rules, DNS configuration, and logging options — into a URL-safe parameter (`?s=…`) and copies the link to the clipboard. Opening the link on any device restores the exact configuration. The parameter is removed from the address bar after the state is restored.
 
 ### Logging
 

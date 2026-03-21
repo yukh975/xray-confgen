@@ -143,6 +143,9 @@ const TRANSLATIONS = {
 
 <p><strong>DNS rules</strong> work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all <code>ru</code> domains to Yandex DNS and resolve everything else via Cloudflare DoH.</p>
 
+<h3>Share</h3>
+<p>The <strong>Share</strong> button encodes the entire form state — VLESS URI, inbound settings, routing rules, DNS configuration, and logging options — into a URL-safe parameter (<code>?s=…</code>) and copies the link to the clipboard. Opening the link on any device restores the exact configuration. The parameter is removed from the address bar after the state is restored.</p>
+
 <h3>Logging</h3>
 <p>When enabled, xray-core writes access and error events to a log file. This is useful for diagnosing connection issues.</p>
 
@@ -316,6 +319,9 @@ const TRANSLATIONS = {
 </ul>
 
 <p><strong>Правила DNS</strong> работают так же, как правила маршрутизации, но вместо действия указывают на один из настроенных DNS-серверов. Каждое правило состоит из базы данных, одного или нескольких тегов и целевого сервера. Например, можно отправлять все домены зоны <code>ru</code> на Yandex DNS, а всё остальное резолвить через Cloudflare DoH.</p>
+
+<h3>Поделиться</h3>
+<p>Кнопка <strong>Поделиться</strong> кодирует всё состояние формы — VLESS URI, настройки inbound, правила маршрутизации, конфигурацию DNS и параметры журналирования — в URL-безопасный параметр (<code>?s=…</code>) и копирует ссылку в буфер обмена. При открытии ссылки на любом устройстве конфигурация восстанавливается автоматически. Параметр удаляется из адресной строки после восстановления.</p>
 
 <h3>Logging</h3>
 <p>При включении xray-core записывает события доступа и ошибки в лог-файл. Это удобно для диагностики проблем с подключением.</p>
