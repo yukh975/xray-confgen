@@ -411,13 +411,20 @@ button.secondary:hover {
 }
 
 .dns-rule-row {
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(120px, 180px) 1fr 160px 32px;
+    gap: 6px;
     align-items: center;
 }
 
-.dns-server-select {
-    flex: 0 0 160px;
+.dns-rule-row select,
+.dns-rule-row input[type="text"] {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.dns-rule-row select {
+    cursor: pointer;
 }
 
 #dns-fields {
