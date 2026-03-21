@@ -123,6 +123,20 @@ const TRANSLATIONS = {
 </ul>
 
 <p><strong>DNS rules</strong> work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all <code>ru</code> domains to Yandex DNS and resolve everything else via Cloudflare DoH.</p>
+
+<h3>Logging</h3>
+<p>When enabled, xray-core writes access and error events to a log file. This is useful for diagnosing connection issues.</p>
+
+<p><strong>Log directory</strong> — the path to the folder where the log file (<code>xray-core.log</code>) will be created. The directory must be created manually on the client machine before starting xray-core — it will not be created automatically. Leave the field empty to output logs to stdout/stderr instead of a file.</p>
+
+<p><strong>Log level</strong> — controls the verbosity of the log:</p>
+<ul>
+  <li><code>debug</code> — maximum detail, including internal xray-core events. Use only for troubleshooting.</li>
+  <li><code>info</code> — general information about connections and server activity.</li>
+  <li><code>warning</code> — only potentially problematic events. Recommended for normal use.</li>
+  <li><code>error</code> — only critical errors that prevent xray-core from functioning correctly.</li>
+  <li><code>none</code> — logging disabled entirely.</li>
+</ul>
 `,
         remove_title:           'Remove',
         err_vless_prefix:       'VLESS URI must start with vless://',
@@ -253,6 +267,20 @@ const TRANSLATIONS = {
 </ul>
 
 <p><strong>Правила DNS</strong> работают так же, как правила маршрутизации, но вместо действия указывают на один из настроенных DNS-серверов. Каждое правило состоит из базы данных, одного или нескольких тегов и целевого сервера. Например, можно отправлять все домены зоны <code>ru</code> на Yandex DNS, а всё остальное резолвить через Cloudflare DoH.</p>
+
+<h3>Logging</h3>
+<p>При включении xray-core записывает события доступа и ошибки в лог-файл. Это удобно для диагностики проблем с подключением.</p>
+
+<p><strong>Каталог журналов</strong> — путь к папке, в которой будет создан файл журнала (<code>xray-core.log</code>). Каталог необходимо создать вручную на клиентском устройстве до запуска xray-core — он не будет создан автоматически. Оставьте поле пустым, чтобы выводить логи в stdout/stderr вместо файла.</p>
+
+<p><strong>Уровень журналирования</strong> — управляет детализацией лога:</p>
+<ul>
+  <li><code>debug</code> — максимальная детализация, включая внутренние события xray-core. Используйте только при отладке.</li>
+  <li><code>info</code> — общая информация о соединениях и активности сервера.</li>
+  <li><code>warning</code> — только потенциально проблемные события. Рекомендуется для обычного использования.</li>
+  <li><code>error</code> — только критические ошибки, препятствующие корректной работе xray-core.</li>
+  <li><code>none</code> — журналирование полностью отключено.</li>
+</ul>
 `,
         remove_title:           'Удалить',
         err_vless_prefix:       'VLESS URI должен начинаться с vless://',
