@@ -1118,3 +1118,164 @@ pre#result-json {
 .hidden {
     display: none !important;
 }
+
+/* ============================================================
+   Mobile (≤ 600px)
+   ============================================================ */
+
+@media (max-width: 600px) {
+    body {
+        padding: 20px 12px;
+    }
+
+    .container {
+        gap: 20px;
+    }
+
+    /* Header: stack title and controls vertically */
+    .page-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .site-logo {
+        width: 36px;
+        height: 36px;
+    }
+
+    .lang-switcher {
+        padding-top: 0;
+    }
+
+    /* Form */
+    form {
+        padding: 16px;
+        gap: 20px;
+    }
+
+    /* Prevent iOS auto-zoom on input focus (requires font-size ≥ 16px) */
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    select,
+    textarea,
+    .rule-row select,
+    .dns-rule-row select,
+    .picker-search-row input {
+        font-size: 16px;
+    }
+
+    /* Stack field rows (IP+port, dir+level, DNS strategy row) */
+    .field-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .field-row .field-group--port,
+    .field-row .field-group--level {
+        flex: 1;
+    }
+
+    /* Routing rule rows: reflow into 2 rows
+       Row 1: [db select] [action] [remove]
+       Row 2: [value picker — full width]          */
+    .rule-row {
+        grid-template-columns: 1fr 80px 32px;
+        grid-template-rows: auto auto;
+    }
+
+    .rule-row > *:nth-child(1) { grid-column: 1;    grid-row: 1; }
+    .rule-row > *:nth-child(2) { grid-column: 1/-1; grid-row: 2; }
+    .rule-row > *:nth-child(3) { grid-column: 2;    grid-row: 1; }
+    .rule-row > *:nth-child(4) { grid-column: 3;    grid-row: 1; }
+
+    /* DNS rule rows: reflow into 2 rows
+       Row 1: [db select] [server select] [remove]
+       Row 2: [value picker — full width]           */
+    .dns-rule-row {
+        grid-template-columns: 1fr 1fr 32px;
+        grid-template-rows: auto auto;
+    }
+
+    .dns-rule-row > *:nth-child(1) { grid-column: 1;    grid-row: 1; }
+    .dns-rule-row > *:nth-child(2) { grid-column: 1/-1; grid-row: 2; }
+    .dns-rule-row > *:nth-child(3) { grid-column: 2;    grid-row: 1; }
+    .dns-rule-row > *:nth-child(4) { grid-column: 3;    grid-row: 1; }
+
+    /* DNS server custom fields: stack name + address vertically */
+    .dns-server-row {
+        flex-wrap: wrap;
+    }
+
+    .dns-custom-fields {
+        flex: 0 0 100%;
+        flex-direction: column;
+    }
+
+    .dns-custom-fields .dns-name {
+        width: 100%;
+    }
+
+    /* Action buttons:
+       Row 1: [Generate config.json — full width]
+       Row 2: [Clear] [Share]
+       Row 3: [Import config.json — full width]   */
+    .actions {
+        flex-wrap: wrap;
+    }
+
+    .actions button[type="submit"] {
+        flex: 0 0 100%;
+    }
+
+    .actions #import-btn {
+        flex: 0 0 100%;
+    }
+
+    .actions button.secondary:not(#import-btn) {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+
+    /* Add / clear rule buttons */
+    .add-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .routing-btns {
+        flex-wrap: wrap;
+    }
+
+    /* Value picker dropdown: match trigger width, no horizontal overflow */
+    .value-picker-dropdown {
+        min-width: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+    }
+
+    /* Modals */
+    .help-modal,
+    .result {
+        width: calc(100% - 24px);
+        max-height: 92vh;
+    }
+
+    .help-body {
+        padding: 14px 16px;
+    }
+
+    .error {
+        width: calc(100% - 24px);
+        padding: 16px 20px;
+        font-size: 14px;
+        gap: 12px;
+    }
+}
