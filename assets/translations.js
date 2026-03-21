@@ -62,9 +62,6 @@ const TRANSLATIONS = {
 </ul>
 <p><strong>Port</strong> is the local port the SOCKS5 proxy listens on. The default <code>10808</code> works in most cases; change it if there is a conflict with another application.</p>
 
-<h3>Databases</h3>
-<p>This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.</p>
-
 <h3>VLESS URL</h3>
 <p>The VLESS URL encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
 <ul>
@@ -75,6 +72,9 @@ const TRANSLATIONS = {
   <li><strong>HTTP/2 (h2)</strong> — HTTP/2 transport with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
 </ul>
 <p>Supported security types: <code>none</code>, <code>tls</code>, <code>reality</code>. The fragment after <code>#</code> is used as a human-readable name for the connection and is stored in the config as a comment.</p>
+
+<h3>Databases</h3>
+<p>This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.</p>
 `,
         remove_title:           'Remove',
         err_vless_prefix:       'VLESS URI must start with vless://',
@@ -144,9 +144,6 @@ const TRANSLATIONS = {
 </ul>
 <p><strong>Порт</strong> — локальный порт, на котором слушает SOCKS5-прокси. Значение по умолчанию <code>10808</code> подходит в большинстве случаев; измените его при конфликте с другим приложением.</p>
 
-<h3>Databases</h3>
-<p>В этом разделе отображается список геобаз данных, доступных на сервере. Они используются при настройке правил маршрутизации и DNS для сопоставления трафика по стране, региону или категории.</p>
-
 <h3>VLESS URL</h3>
 <p>VLESS URL содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
 <ul>
@@ -157,6 +154,9 @@ const TRANSLATIONS = {
   <li><strong>HTTP/2 (h2)</strong> — HTTP/2-транспорт с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
 </ul>
 <p>Поддерживаемые типы безопасности: <code>none</code>, <code>tls</code>, <code>reality</code>. Фрагмент после <code>#</code> используется как читаемое имя подключения и сохраняется в конфиге в виде комментария.</p>
+
+<h3>Databases</h3>
+<p>В этом разделе отображается список геобаз данных, доступных на сервере. Они используются при настройке правил маршрутизации и DNS для сопоставления трафика по стране, региону или категории.</p>
 `,
         remove_title:           'Удалить',
         err_vless_prefix:       'VLESS URI должен начинаться с vless://',
