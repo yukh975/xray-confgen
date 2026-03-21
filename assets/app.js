@@ -139,6 +139,7 @@ const ROUTE_PRESETS = [
     {
         id: 'preset_all_proxy',
         rules: [],
+        outbound: 'proxy',
     },
 ];
 
@@ -1016,6 +1017,10 @@ function togglePreset(preset) {
         const routingEnabled = document.getElementById('routing_enabled');
         routingEnabled.checked = true;
         routingFields.classList.remove('hidden');
+
+        if (preset.outbound) {
+            document.getElementById('default_outbound').value = preset.outbound;
+        }
 
         const available = new Set(databases);
         const existing  = collectRules();
