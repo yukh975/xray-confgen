@@ -601,7 +601,7 @@ function createDnsServerRow({ preset = 'google_doh', custom = '' } = {}) {
     const customInput = document.createElement('input');
     customInput.type        = 'text';
     customInput.className   = 'dns-custom';
-    customInput.placeholder = 'https://...';
+    customInput.placeholder = '8.8.8.8 or https://...';
     customInput.value       = custom;
     customInput.classList.toggle('hidden', preset !== 'custom');
 
