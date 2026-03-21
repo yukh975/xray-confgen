@@ -547,16 +547,23 @@ function buildValuePicker(initDb, selectedValues = []) {
     }
 
     // Open dropdown, loading tags from server on first open
+    let fetchSeq = 0;
+
     async function openDropdown(currentDb) {
         dropdown.classList.remove('hidden');
 
         if (knownTags === null) {
+            const seq = ++fetchSeq;
             const loading = document.createElement('div');
             loading.className   = 'picker-loading';
             loading.textContent = t('picker_loading');
             dropdown.insertBefore(loading, chipsRow);
 
             const tags = await fetchTags(currentDb);
+
+            // If resetPicker() was called while we were waiting, discard stale result
+            if (seq !== fetchSeq) { loading.remove(); return; }
+
             knownTags = tags;
             renderCheckboxes(knownTags);
         } else {
@@ -584,6 +591,7 @@ function buildValuePicker(initDb, selectedValues = []) {
 
     wrapper.getValues   = () => [...selected];
     wrapper.resetPicker = () => {
+        fetchSeq++;           // invalidate any in-flight fetch
         selected  = new Set();
         knownTags = null;
         dropdown.querySelectorAll('.picker-search, .picker-item, .picker-sep, .picker-loading').forEach(el => el.remove());
@@ -734,7 +742,20 @@ function createDnsServerRow({ preset = 'google_doh', custom = '', name = '' } = 
     customFields.appendChild(customInput);
 
     presetSelect.addEventListener('change', () => {
-        customFields.classList.toggle('hidden', presetSelect.value !== 'custom');
+        const newVal = presetSelect.value;
+        if (newVal !== 'custom') {
+            const isDup = [...dnsServersEl.querySelectorAll('.dns-server-row')].some(r => {
+                if (r === row) return false;
+                return r.querySelector('.dns-preset').value === newVal;
+            });
+            if (isDup) {
+                presetSelect.value = preset;
+                showError(t('dns_server_duplicate'));
+                return;
+            }
+        }
+        preset = newVal;
+        customFields.classList.toggle('hidden', newVal !== 'custom');
         updateRuleServerSelects();
         saveState();
     });
