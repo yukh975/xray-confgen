@@ -4,15 +4,15 @@
 
 <img src="assets/logo.svg" width="48" height="48" align="left" style="margin-right: 14px">
 
-# Xray config generator v1.0.2
+# Xray config generator v1.0.3
 
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
 [![Nginx](https://img.shields.io/badge/web-Nginx%20%2B%20PHP--FPM-009639)](https://nginx.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
 
-**A web tool for generating `config.json` for [xray-core](https://github.com/XTLS/Xray-core) from a VLESS link.**
+**A web tool for generating `config.json` for [xray-core](https://github.com/XTLS/Xray-core) from a VLESS URI.**
 
-Paste a VLESS link, configure the SOCKS5 inbound parameters and routing rules — and get a ready-to-use `config.json` to download or copy.
+Paste a VLESS URI, configure the SOCKS5 inbound parameters and routing rules — and get a ready-to-use `config.json` to download or copy.
 
 ---
 
@@ -24,7 +24,7 @@ Current development version is available at **https://yukh.net/xray-confgen/**
 
 ## Usage
 
-For a basic setup, just paste your **VLESS URL** into the corresponding field and click **«Generate config.json»**. That's it — the file is ready to use with xray-core.
+For a basic setup, just paste your **VLESS URI** into the corresponding field and click **«Generate config.json»**. That's it — the file is ready to use with xray-core.
 
 However, we recommend taking a few extra minutes to fine-tune the client configuration. The sections below cover the available options.
 
@@ -37,13 +37,15 @@ However, we recommend taking a few extra minutes to fine-tune the client configu
 
 ### Inbound
 
-The **inbound** is the local SOCKS5 proxy that xray-core opens on your device. Applications (browser, system) connect to it, and xray-core forwards their traffic through the VLESS tunnel.
+The **inbound** defines the local proxy that xray-core opens on your device. Applications (browser, system) connect to it, and xray-core forwards their traffic through the VLESS tunnel.
 
 **IP address** defines which network interface xray-core listens on:
 - `127.0.0.1` — recommended for personal devices (desktops, laptops, phones). Only the device itself can connect to the proxy; it is not accessible from the local network.
 - `0.0.0.0` — listens on all available IP addresses on the device. Other devices on the same network can use this proxy. Use with caution.
 
 **Port** is the local port the SOCKS5 proxy listens on. The default `10808` works in most cases; change it if there is a conflict with another application.
+
+**HTTP inbound** — click *Add HTTP inbound* to add a second local proxy that accepts HTTP CONNECT requests (in addition to the SOCKS5 inbound). This is useful for applications that support HTTP proxy but not SOCKS5. The default address is `127.0.0.1:8080`. Configure IP and port the same way as for SOCKS5. Click ✕ to remove the HTTP inbound.
 
 ### VLESS URL
 
@@ -62,6 +64,18 @@ The VLESS URL encodes all the parameters needed to connect to the remote server.
 
 Supported security types: `none`, `tls`, `reality`. The fragment after `#` is used as a human-readable name for the connection and is stored in the config as a comment.
 
+### Sniffing
+
+Sniffing allows xray-core to inspect the first bytes of inbound traffic and determine the application-layer protocol. The detected protocol is used for more precise routing and, if needed, to override the destination address extracted from the protocol handshake. Enabled by default.
+
+**Detect protocols (destOverride)** — the protocols xray-core will attempt to identify:
+- `http` — plain HTTP/1.x traffic.
+- `tls` — TLS handshake; xray-core extracts the SNI from ClientHello for routing. Recommended to keep enabled.
+- `quic` — QUIC/HTTP3 traffic.
+- `bittorrent` — BitTorrent protocol; required if you want to route or block torrents by protocol.
+
+**Route only (routeOnly)** — when enabled, the detected protocol is used for routing only. xray-core will not replace the original destination address with the one extracted from the protocol handshake.
+
 ### Databases
 
 This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.
@@ -69,6 +83,15 @@ This section lists the geo databases available on the server. They are used when
 ### Routing
 
 Routing determines how xray-core handles each connection — whether to send it through the proxy, route it directly, or block it entirely. If the section is disabled, all traffic goes through the proxy without any filtering.
+
+**Presets** — ready-made rule sets that can be combined. Click *Presets* and check one or more:
+- **Russia** — route local and Russian traffic directly, block ads. Sets default outbound to `proxy`.
+- **Iran** — route local and Iranian traffic directly (requires `geoip_IR.dat` / `geosite_IR.dat`).
+- **Block ads** — block domains in `category-ads-all`.
+- **All through proxy** — enable routing with default outbound `proxy`, no additional rules.
+- **Block BitTorrent** — add a protocol-level rule that blocks all BitTorrent traffic.
+
+Presets add rules without replacing existing ones. Duplicate rules are skipped. Unchecking a preset removes only the rules it added. Use *Clear rules* to reset everything at once.
 
 **Default outbound** is the action applied to traffic that does not match any rule:
 - `proxy` — send unmatched traffic through the VLESS tunnel (recommended when you want most traffic proxied).
@@ -84,7 +107,7 @@ Routing determines how xray-core handles each connection — whether to send it 
 - **Tags** — one or more categories from the selected database (e.g. `ru`, `private`, `category-ads-all`). Click the field to open the picker, search by name, or type a custom value.
 - **Action** — what to do with matching traffic: `proxy`, `direct`, or `block`.
 
-A typical setup: route local and Russian traffic directly, block ads, and proxy everything else. Add rules in that order and set the default outbound to `proxy`.
+A typical setup: apply the *Russia* preset and set the default outbound to `proxy`.
 
 ### DNS
 
@@ -105,7 +128,36 @@ This section lets you configure a custom DNS resolver for xray-core. When disabl
 - A **preset** — Google DoH, Cloudflare DoH, Yandex DoH (all use IP addresses to avoid bootstrap dependency), or their plain DNS counterparts.
 - A **custom** server — enter a name (used as a label in rules) and an address: a plain IP (`8.8.8.8`) or a DoH URL (`https://1.1.1.1/dns-query`).
 
+Each preset can appear in the list only once. When you click *Add server*, the first preset not yet in the list is selected automatically. Changing an existing server to a preset already present shows an error and reverts the selection.
+
 **DNS rules** work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all `ru` domains to Yandex DNS and resolve everything else via Cloudflare DoH.
+
+### Mux
+
+Mux (multiplexing) packs multiple logical streams into a single physical TCP connection to the server. Instead of opening a new connection for every request — each with its own TLS handshake — xray-core reuses one connection, reducing latency for short, frequent requests (browser tabs, API calls).
+
+Mux is most effective on high-latency connections. For large file transfers or streaming it may hurt performance due to head-of-line blocking. Disabled by default.
+
+> **⚠ Incompatible with Reality + XTLS flow.** If your VLESS URI uses Reality security with `flow=xtls-rprx-vision`, the Mux setting is silently ignored — no `mux` block is written to the config.
+
+**Concurrency** — the maximum number of concurrent TCP streams per connection. Default: 8.
+
+**XUDP concurrency** — the same limit for UDP streams (XUDP protocol). Default: 8.
+
+**UDP/443 (QUIC)** — how to handle QUIC traffic:
+- `reject` — block QUIC; the client falls back to TCP/TLS. Recommended in most cases.
+- `allow` — proxy QUIC through the tunnel.
+- `skip` — let QUIC pass directly without the tunnel.
+
+### Import config.json
+
+The **Import config.json** button lets you load an existing `config.json` file back into the form. Click the button and select the file — all fields (inbound, VLESS URI, routing rules, DNS configuration, and logging settings) are populated automatically. You can then adjust the configuration and regenerate an updated `config.json`.
+
+Only files generated by this tool are guaranteed to import correctly. Manually edited configs may import partially if they use structures not produced by the generator.
+
+### Share
+
+The **Share** button encodes the entire form state — VLESS URI, inbound settings, routing rules, DNS configuration, and logging options — into a URL-safe parameter (`?s=…`) and copies the link to the clipboard. Opening the link on any device restores the exact configuration. The parameter is removed from the address bar after the state is restored.
 
 ### Logging
 
@@ -148,6 +200,17 @@ xray-confgen/
 ```
 
 All `.dat` files present in the `db/` directory are detected and used automatically.
+
+To update or add databases, download the required files into the `db/` directory:
+
+| File | Source |
+|------|--------|
+| `geoip.dat` | [Loyalsoldier/v2ray-rules-dat](https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat) |
+| `geosite.dat` | [Loyalsoldier/v2ray-rules-dat](https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat) |
+| `geoip_IR.dat` | [chocolate4u/Iran-v2ray-rules](https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat) |
+| `geosite_IR.dat` | [chocolate4u/Iran-v2ray-rules](https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geosite.dat) |
+| `geoip_RU.dat` | [runetfreedom/russia-v2ray-rules-dat](https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat) |
+| `geosite_RU.dat` | [runetfreedom/russia-v2ray-rules-dat](https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geosite.dat) |
 
 Configure nginx:
 

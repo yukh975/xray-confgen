@@ -4,6 +4,34 @@
 
 # Changelog
 
+## v1.0.3 — 2026-03-21
+
+### UI
+- Dark/light theme toggle button (sun/moon icon) in the header; dark theme is the default
+- Theme preference is saved to `localStorage` and restored on page load without flash
+- Routing **Presets** button in the routing section opens a multi-select dropdown: Russia, Iran, Block ads, All through proxy, Block BitTorrent
+  - Presets are additive — they add rules without replacing existing ones; duplicates are skipped
+  - Multiple presets can be active simultaneously; unchecking a preset removes only the rules it added
+  - Preset rules are filtered to only use databases available on the server
+- **Block BitTorrent** moved from a standalone checkbox into the Presets dropdown
+- **Clear rules** button added to both Routing and DNS sections
+- Routing section button layout: Presets on the left, Add rule / Clear rules on the right; same for DNS rules
+- **Share** button encodes the full form state into a URL-safe base64 parameter (`?s=…`); the link can be opened on any device to restore the exact configuration; shared URL is cleaned from the address bar after state is restored
+- "VLESS URL" renamed to "VLESS URI" everywhere: field label, subtitle, help content
+
+### Features
+- **Mux section** added between DNS and Logging: enable toggle (default: off), `concurrency`, `xudpConcurrency`, `xudpProxyUDP443`; automatically skipped when Reality + `xtls-rprx-vision` flow is used
+- **HTTP inbound**: button in the Inbound section adds an HTTP proxy inbound (`127.0.0.1:8080` by default); IP and port are configurable; clicking ✕ removes it; only one HTTP inbound is allowed
+- **Sniffing section** added between VLESS and Databases: enable toggle (default: on), protocol checkboxes (`http`, `tls`, `quic`, `bittorrent`), and `routeOnly` option; sniffing config is only emitted when the section is enabled
+- **Import config.json** button: load an existing `config.json` back into the form — all fields (inbound, VLESS URI, routing rules, DNS, logging) are populated automatically; the configuration can then be adjusted and regenerated
+- **DNS server deduplication**: each preset can appear in the list only once; clicking *Add server* auto-selects the first unused preset; changing an existing server to a preset already in the list shows an error and reverts the selection
+- **Mobile layout**: the interface is fully responsive on smartphones — field rows stack vertically, rule rows reflow to two lines, touch targets enlarged, iOS auto-zoom prevented
+
+### Bug fixes
+- Tag picker showed stale tags after switching databases: a race condition caused a completed `fetchTags()` call to overwrite `knownTags` after `resetPicker()` had already run; fixed with a sequence counter that invalidates in-flight fetches
+
+---
+
 ## v1.0.2 — 2026-03-21
 
 ### UI

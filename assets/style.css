@@ -17,6 +17,20 @@
     --radius:    10px;
     --font:      'Inter', system-ui, -apple-system, sans-serif;
     --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --btn-secondary-hover: #3a3e57;
+}
+
+[data-theme="light"] {
+    --bg:        #f0f2f8;
+    --surface:   #ffffff;
+    --border:    #d0d5e8;
+    --accent:    #4a6cf7;
+    --accent-hover: #6a8cff;
+    --text:      #1a1d2e;
+    --muted:     #7077a0;
+    --success:   #2ea872;
+    --error:     #e53e3e;
+    --btn-secondary-hover: #e0e3f0;
 }
 
 body {
@@ -108,6 +122,91 @@ body {
 .help-btn:hover {
     background: var(--accent);
     color: #fff;
+}
+
+.theme-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.theme-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+/* Presets dropdown */
+
+.routing-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.routing-btns-right {
+    display: flex;
+    gap: 8px;
+}
+
+.preset-wrap {
+    position: relative;
+}
+
+.preset-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 100;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    min-width: 180px;
+    overflow: hidden;
+    animation: dropdown-in 0.12s ease;
+}
+
+.preset-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s;
+}
+
+.preset-item:hover {
+    background: var(--bg);
+    color: var(--accent);
+}
+
+.preset-item input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.add-btn--clear {
+    color: var(--muted);
+}
+
+.add-btn--clear:hover {
+    color: var(--error);
 }
 
 /* Help modal */
@@ -388,7 +487,7 @@ button.secondary {
 
 button.secondary:hover {
     color: var(--text);
-    background: #3a3e57;
+    background: var(--btn-secondary-hover);
 }
 
 /* Section blocks */
@@ -496,6 +595,38 @@ button.secondary:hover {
     font-size: 13px;
     color: var(--text);
     font-weight: 500;
+}
+
+/* Sniffing section */
+
+#sniffing-fields {
+    padding-left: 23px; /* align with toggle label text (15px checkbox + 8px gap) */
+}
+
+/* Sniffing destOverride checkboxes */
+
+.sniffing-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 4px;
+}
+
+.sniff-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.sniff-check input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 /* Routing rules */
@@ -976,6 +1107,11 @@ pre#result-json {
     to   { opacity: 1; transform: translate(-50%, -50%); }
 }
 
+@keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 .error-close {
     flex-shrink: 0;
     background: none;
@@ -1013,4 +1149,188 @@ pre#result-json {
 
 .hidden {
     display: none !important;
+}
+
+/* ============================================================
+   Mobile (≤ 600px)
+   ============================================================ */
+
+@media (max-width: 600px) {
+    body {
+        padding: 20px 12px;
+    }
+
+    .container {
+        gap: 20px;
+    }
+
+    /* Header: stack title and controls vertically */
+    .page-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .site-logo {
+        width: 36px;
+        height: 36px;
+    }
+
+    .lang-switcher {
+        padding-top: 0;
+    }
+
+    /* Form */
+    form {
+        padding: 16px;
+        gap: 20px;
+    }
+
+    /* Prevent iOS auto-zoom on input focus (requires font-size ≥ 16px) */
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    select,
+    textarea,
+    .rule-row select,
+    .dns-rule-row select,
+    .picker-search-row input {
+        font-size: 16px;
+    }
+
+    /* Stack field rows (IP+port, dir+level, DNS strategy row) */
+    .field-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .field-row .field-group--port,
+    .field-row .field-group--level {
+        flex: 1;
+    }
+
+    /* Routing rule rows: reflow into 2 rows
+       Row 1: [db select] [action] [remove]
+       Row 2: [value picker — full width]          */
+    .rule-row {
+        grid-template-columns: 1fr 70px 32px;
+        grid-template-rows: auto auto;
+    }
+
+    .rule-row > *:nth-child(1) { grid-column: 1;    grid-row: 1; }
+    .rule-row > *:nth-child(2) { grid-column: 1/-1; grid-row: 2; }
+    .rule-row > *:nth-child(3) { grid-column: 2;    grid-row: 1; }
+    .rule-row > *:nth-child(4) { grid-column: 3;    grid-row: 1; }
+
+    /* DNS rule rows: one field per line
+       Row 1: [db select (1fr)] [remove (32px)]
+       Row 2: [value picker — full width]
+       Row 3: [server select — full width]          */
+    .dns-rule-row {
+        grid-template-columns: 1fr 32px;
+        grid-template-rows: auto auto auto;
+    }
+
+    .dns-rule-row > *:nth-child(1) { grid-column: 1;    grid-row: 1; }
+    .dns-rule-row > *:nth-child(2) { grid-column: 1/-1; grid-row: 2; }
+    .dns-rule-row > *:nth-child(3) { grid-column: 1/-1; grid-row: 3; }
+    .dns-rule-row > *:nth-child(4) { grid-column: 2;    grid-row: 1; }
+
+    /* Compact padding on routing rule selects so long db names fit */
+    .rule-row select {
+        padding-left: 6px;
+        padding-right: 22px;
+        background-position: right 5px center;
+    }
+
+    /* DNS server custom fields: stack name + address vertically */
+    .dns-server-row {
+        flex-wrap: wrap;
+    }
+
+    .dns-custom-fields {
+        flex: 0 0 100%;
+        flex-direction: column;
+    }
+
+    .dns-custom-fields .dns-name {
+        width: 100%;
+    }
+
+    /* Action buttons:
+       Row 1: [Generate config.json — full width]
+       Row 2: [Clear] [Share]
+       Row 3: [Import config.json — full width]   */
+    .actions {
+        flex-wrap: wrap;
+    }
+
+    .actions button[type="submit"] {
+        flex: 0 0 100%;
+    }
+
+    .actions #import-btn {
+        flex: 0 0 100%;
+    }
+
+    .actions button.secondary:not(#import-btn) {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        padding: 10px 8px;
+    }
+
+    /* Visually separate individual rules */
+    #routing-rules,
+    #dns-rules-list {
+        gap: 10px;
+    }
+
+    .rule-row,
+    .dns-rule-row {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    /* Add / clear rule buttons */
+    .add-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .routing-btns {
+        flex-wrap: wrap;
+    }
+
+    /* Value picker dropdown: match trigger width, no horizontal overflow */
+    .value-picker-dropdown {
+        min-width: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+    }
+
+    /* Modals */
+    .help-modal,
+    .result {
+        width: calc(100% - 24px);
+        max-height: 92vh;
+    }
+
+    .help-body {
+        padding: 14px 16px;
+    }
+
+    .error {
+        width: calc(100% - 24px);
+        padding: 16px 20px;
+        font-size: 14px;
+        gap: 12px;
+    }
 }

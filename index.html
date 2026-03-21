@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xray config generator</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="assets/style.css">
+    <script>(function(){var t=localStorage.getItem('xray_theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');})()</script>
 </head>
 <body>
     <div class="container">
@@ -19,6 +20,8 @@
                 </div>
             </div>
             <div class="lang-switcher">
+                <button type="button" id="theme-btn" class="theme-btn"></button>
+                <span class="lang-sep">|</span>
                 <button type="button" id="help-btn" class="help-btn" data-i18n-title="help_title">?</button>
                 <span class="lang-sep">|</span>
                 <button type="button" id="lang-en" class="lang-btn">EN</button>
@@ -88,6 +91,24 @@
                 </div>
             </div>
 
+            <!-- HTTP inbound -->
+            <div id="http-inbound-row" class="field-row hidden" style="margin-top:10px; align-items:flex-end">
+                <div class="field-group">
+                    <label for="http_inbound_ip" data-i18n="inbound_ip_label"></label>
+                    <input type="text" id="http_inbound_ip" placeholder="127.0.0.1" value="127.0.0.1">
+                    <span class="hint" data-i18n="http_inbound_ip_hint"></span>
+                </div>
+                <div class="field-group field-group--port">
+                    <label for="http_inbound_port" data-i18n="inbound_port_label"></label>
+                    <input type="number" id="http_inbound_port" placeholder="8080" value="8080" min="1" max="65535">
+                    <span class="hint" data-i18n="http_inbound_port_hint"></span>
+                </div>
+                <button type="button" id="remove-http-inbound-btn" class="remove-btn" data-i18n-title="remove_title">✕</button>
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:8px">
+                <button type="button" id="add-http-inbound-btn" class="add-btn" data-i18n="add_http_inbound_btn"></button>
+            </div>
+
             <!-- VLESS -->
             <div class="section-title">VLESS</div>
 
@@ -100,6 +121,35 @@
                     required
                 ></textarea>
                 <span class="hint" data-i18n="vless_link_hint"></span>
+            </div>
+
+            <!-- Sniffing -->
+            <div class="section-title">Sniffing</div>
+
+            <div class="field-group">
+                <label class="toggle-row">
+                    <input type="checkbox" id="sniffing_enabled" name="sniffing_enabled" checked>
+                    <span class="toggle-label" data-i18n="sniffing_enabled_label"></span>
+                </label>
+                <div id="sniffing-fields" class="auth-fields hidden">
+                    <div class="field-group" style="margin-top:10px">
+                        <label data-i18n="sniffing_dest_override_label"></label>
+                        <div class="sniffing-checkboxes">
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_http" checked> http</label>
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_tls" checked> tls</label>
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_quic"> quic</label>
+                            <label class="sniff-check"><input type="checkbox" id="sniffing_dest_bittorrent"> bittorrent</label>
+                        </div>
+                        <span class="hint" data-i18n="sniffing_dest_override_hint"></span>
+                    </div>
+                    <div class="field-group" style="margin-top:8px">
+                        <label class="toggle-row">
+                            <input type="checkbox" id="sniffing_route_only">
+                            <span class="toggle-label" data-i18n="sniffing_route_only_label"></span>
+                        </label>
+                        <span class="hint" data-i18n="sniffing_route_only_hint"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- Databases -->
@@ -136,14 +186,20 @@
                         </div>
                     </div>
                     <div class="hint" style="margin-bottom:6px" data-i18n="routing_hint"></div>
-                    <label class="toggle-row">
-                        <input type="checkbox" id="block_bittorrent" name="block_bittorrent">
-                        <span class="toggle-label" data-i18n="block_bittorrent_label"></span>
-                    </label>
+                    <input type="checkbox" id="block_bittorrent" name="block_bittorrent" style="display:none">
                     <div id="routing-rules">
                         <!-- populated by JS -->
                     </div>
-                    <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
+                    <div class="routing-btns">
+                        <div class="preset-wrap">
+                            <button type="button" id="preset-btn" class="add-btn" data-i18n="preset_btn"></button>
+                            <div id="preset-dropdown" class="preset-dropdown hidden"></div>
+                        </div>
+                        <div class="routing-btns-right">
+                            <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
+                            <button type="button" id="clear-rules-btn" class="add-btn add-btn--clear" data-i18n="clear_rules_btn"></button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -207,8 +263,44 @@
                     <div id="dns-rules-list">
                         <!-- populated by JS -->
                     </div>
-                    <button type="button" id="add-dns-rule-btn" class="add-btn" data-i18n="add_dns_rule_btn"></button>
+                    <div class="routing-btns-right" style="margin-top:8px">
+                        <button type="button" id="add-dns-rule-btn" class="add-btn" data-i18n="add_dns_rule_btn"></button>
+                        <button type="button" id="clear-dns-rules-btn" class="add-btn add-btn--clear" data-i18n="clear_rules_btn"></button>
+                    </div>
 
+                </div>
+            </div>
+
+            <!-- Mux -->
+            <div class="section-title">Mux</div>
+
+            <div class="field-group">
+                <label class="toggle-row">
+                    <input type="checkbox" id="mux_enabled" name="mux_enabled">
+                    <span class="toggle-label" data-i18n="mux_enabled_label"></span>
+                </label>
+                <div id="mux-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px">
+                        <div class="field-group">
+                            <label for="mux_concurrency" data-i18n="mux_concurrency_label"></label>
+                            <input type="number" id="mux_concurrency" value="8" min="-1" max="1024">
+                            <span class="hint" data-i18n="mux_concurrency_hint"></span>
+                        </div>
+                        <div class="field-group">
+                            <label for="mux_xudp_concurrency" data-i18n="mux_xudp_concurrency_label"></label>
+                            <input type="number" id="mux_xudp_concurrency" value="8" min="-1" max="1024">
+                            <span class="hint" data-i18n="mux_xudp_concurrency_hint"></span>
+                        </div>
+                        <div class="field-group">
+                            <label for="mux_xudp_proxy_udp443" data-i18n="mux_xudp_proxy_udp443_label"></label>
+                            <select id="mux_xudp_proxy_udp443">
+                                <option value="reject">reject</option>
+                                <option value="allow">allow</option>
+                                <option value="skip">skip</option>
+                            </select>
+                            <span class="hint" data-i18n="mux_xudp_proxy_udp443_hint"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -246,6 +338,9 @@
                     <span class="btn-text" data-i18n="submit_btn"></span>
                 </button>
                 <button type="button" id="clear-btn" class="secondary" data-i18n="clear_btn"></button>
+                <button type="button" id="share-btn" class="secondary" data-i18n="share_btn"></button>
+                <input type="file" id="import-file" accept=".json" style="display:none">
+                <button type="button" id="import-btn" class="secondary" data-i18n="import_btn"></button>
             </div>
         </form>
 
@@ -285,7 +380,7 @@
         <footer class="copyright">
             <div>© 2026 Yuriy Khachaturian</div>
             <div><a href="https://github.com/yukh975/xray-confgen" target="_blank" rel="noopener">Source code on GitHub</a></div>
-            <div>v1.0.2</div>
+            <div>v1.0.3</div>
         </footer>
     </div>
 

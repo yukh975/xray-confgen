@@ -1,12 +1,12 @@
 const TRANSLATIONS = {
     en: {
-        subtitle:               'Generate <code>config.json</code> for xray-core from a VLESS link',
+        subtitle:               'Generate <code>config.json</code> for xray-core from a VLESS URI',
         inbound_ip_label:       'IP address',
         inbound_ip_hint:        'SOCKS5 address',
         inbound_port_label:     'Port',
         inbound_port_hint:      'SOCKS5 port',
-        vless_link_label:       'VLESS URL',
-        vless_link_hint:        'Full VLESS link including parameters and name',
+        vless_link_label:       'VLESS URI',
+        vless_link_hint:        'Full VLESS URI including parameters and name',
         socks5_auth_label:      'Enable SOCKS5 authentication',
         socks5_user_label:      'Username',
         socks5_pass_label:      'Password',
@@ -50,7 +50,7 @@ const TRANSLATIONS = {
         log_level_label:        'Log level',
         help_title:             'Help',
         help_content:           `
-<p>For a basic setup, just paste your <strong>VLESS URL</strong> into the corresponding field and click <strong>«Generate config.json»</strong>. That's it — the file is ready to use with xray-core.</p>
+<p>For a basic setup, just paste your <strong>VLESS URI</strong> into the corresponding field and click <strong>«Generate config.json»</strong>. That's it — the file is ready to use with xray-core.</p>
 <p>However, we recommend taking a few extra minutes to fine-tune the client configuration. The sections below cover the available options.</p>
 
 <p><strong>How Routing and DNS depend on each other:</strong></p>
@@ -63,16 +63,17 @@ const TRANSLATIONS = {
 </ul>
 
 <h3>Inbound</h3>
-<p>The <strong>inbound</strong> is the local SOCKS5 proxy that xray-core opens on your device. Applications (browser, system) connect to it, and xray-core forwards their traffic through the VLESS tunnel.</p>
+<p>The <strong>inbound</strong> defines the local proxy that xray-core opens on your device. Applications (browser, system) connect to it, and xray-core forwards their traffic through the VLESS tunnel.</p>
 <p><strong>IP address</strong> defines which network interface xray-core listens on:</p>
 <ul>
   <li><code>127.0.0.1</code> — recommended for personal devices (desktops, laptops, phones). Only the device itself can connect to the proxy; it is not accessible from the local network.</li>
   <li><code>0.0.0.0</code> — listens on all available IP addresses on the device. Other devices on the same network can use this proxy. Use with caution.</li>
 </ul>
 <p><strong>Port</strong> is the local port the SOCKS5 proxy listens on. The default <code>10808</code> works in most cases; change it if there is a conflict with another application.</p>
+<p><strong>HTTP inbound</strong> — click <em>Add HTTP inbound</em> to add a second local proxy that accepts HTTP CONNECT requests alongside the SOCKS5 inbound. This is useful for applications that support HTTP proxy but not SOCKS5. The default address is <code>127.0.0.1:8080</code>; IP and port can be changed. Click ✕ to remove the HTTP inbound.</p>
 
-<h3>VLESS URL</h3>
-<p>The VLESS URL encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
+<h3>VLESS URI</h3>
+<p>The VLESS URI encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
 <ul>
   <li><strong>TCP</strong> — plain TCP transport, with or without TLS/Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket transport, typically with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -85,8 +86,33 @@ const TRANSLATIONS = {
 <h3>Databases</h3>
 <p>This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.</p>
 
+<h3>Sniffing</h3>
+<p>Sniffing allows xray-core to inspect the first bytes of inbound traffic and determine the application-layer protocol. The detected protocol can be used for more precise routing (e.g. routing BitTorrent separately from HTTPS) and, if needed, to override the destination address extracted from the protocol handshake.</p>
+
+<p><strong>Enable sniffing</strong> — when disabled, xray-core forwards traffic as-is without protocol detection. Enabled by default.</p>
+
+<p><strong>Detect protocols (destOverride)</strong> — the protocols xray-core will attempt to identify:</p>
+<ul>
+  <li><code>http</code> — plain HTTP/1.x traffic (port 80 and others).</li>
+  <li><code>tls</code> — TLS handshake; xray-core extracts the SNI (server name) from ClientHello for routing. Recommended to keep enabled.</li>
+  <li><code>quic</code> — QUIC/HTTP3 traffic.</li>
+  <li><code>bittorrent</code> — BitTorrent protocol; required if you want to route or block torrents by protocol.</li>
+</ul>
+
+<p><strong>Route only (routeOnly)</strong> — when enabled, the detected protocol is used for routing decisions only. xray-core will <em>not</em> replace the original destination address with the one extracted from the protocol handshake. Useful when you want protocol-aware routing without affecting the destination.</p>
+
 <h3>Routing</h3>
 <p>Routing determines how xray-core handles each connection — whether to send it through the proxy, route it directly, or block it entirely. If the section is disabled, all traffic goes through the proxy without any filtering.</p>
+
+<p><strong>Presets</strong> — ready-made rule sets that can be combined. Click <em>Presets</em> to open the list and check one or more:</p>
+<ul>
+  <li><strong>Russia</strong> — route local and Russian traffic directly, block ads. Sets default outbound to <code>proxy</code>.</li>
+  <li><strong>Iran</strong> — route local and Iranian traffic directly (requires <code>geoip_IR.dat</code> / <code>geosite_IR.dat</code>).</li>
+  <li><strong>Block ads</strong> — block domains in <code>category-ads-all</code>.</li>
+  <li><strong>All through proxy</strong> — enable routing with default outbound <code>proxy</code>, no additional rules.</li>
+  <li><strong>Block BitTorrent</strong> — add a protocol-level rule that blocks all BitTorrent traffic.</li>
+</ul>
+<p>Presets add rules without replacing existing ones. Duplicate rules are skipped. Unchecking a preset removes only the rules it added. Use <em>Clear rules</em> to reset everything at once.</p>
 
 <p><strong>Default outbound</strong> is the action applied to traffic that does not match any rule:</p>
 <ul>
@@ -107,7 +133,7 @@ const TRANSLATIONS = {
   <li><strong>Tags</strong> — one or more categories from the selected database (e.g. <code>ru</code>, <code>private</code>, <code>category-ads-all</code>). Click the field to open the picker, search by name, or type a custom value.</li>
   <li><strong>Action</strong> — what to do with matching traffic: <code>proxy</code>, <code>direct</code>, or <code>block</code>.</li>
 </ul>
-<p>A typical setup: route local and Russian traffic directly, block ads, and proxy everything else. Add rules in that order and set the default outbound to <code>proxy</code>.</p>
+<p>A typical setup: apply the <em>Russia</em> preset and set the default outbound to <code>proxy</code>.</p>
 
 <h3>DNS</h3>
 <p>This section lets you configure a custom DNS resolver for xray-core. When disabled, the system DNS is used. Configuring DNS is recommended to avoid leaks and to direct different domains to different resolvers.</p>
@@ -130,8 +156,29 @@ const TRANSLATIONS = {
   <li>A <strong>preset</strong> — Google DoH, Cloudflare DoH, Yandex DoH (all use IP addresses to avoid bootstrap dependency), or their plain DNS counterparts.</li>
   <li>A <strong>custom</strong> server — enter a name (used as a label in rules) and an address: a plain IP (<code>8.8.8.8</code>) or a DoH URL (<code>https://1.1.1.1/dns-query</code>).</li>
 </ul>
+<p>Each preset can appear in the list only once. When you click <em>Add server</em>, the first preset not yet in the list is selected automatically. Changing an existing server to a preset already present shows an error and reverts the selection.</p>
 
 <p><strong>DNS rules</strong> work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all <code>ru</code> domains to Yandex DNS and resolve everything else via Cloudflare DoH.</p>
+
+<h3>Mux</h3>
+<p>Mux (multiplexing) packs multiple logical streams into a single physical TCP connection to the server. Instead of opening a new connection for every request — each with its own TLS handshake — xray-core reuses one connection, reducing latency for short, frequent requests (browser tabs, API calls).</p>
+<p>Mux is most effective on high-latency connections where each handshake adds a noticeable delay. For large file transfers or streaming it may hurt performance due to head-of-line blocking — all streams share the same pipe.</p>
+<p><strong>⚠ Incompatible with Reality + XTLS flow (<code>xtls-rprx-vision</code>).</strong> If your VLESS URI uses Reality security with <code>flow=xtls-rprx-vision</code>, the Mux setting is silently ignored and no <code>mux</code> block is written to the config.</p>
+<p><strong>Concurrency</strong> — the maximum number of concurrent TCP streams multiplexed into one connection. Default: 8.</p>
+<p><strong>XUDP concurrency</strong> — the same limit for UDP streams (XUDP protocol). Default: 8.</p>
+<p><strong>UDP/443 (QUIC)</strong> — controls how xray-core handles QUIC traffic (UDP port 443):</p>
+<ul>
+  <li><code>reject</code> — block QUIC; the client falls back to TCP/TLS. Recommended in most cases.</li>
+  <li><code>allow</code> — proxy QUIC through the tunnel.</li>
+  <li><code>skip</code> — let QUIC pass directly without going through the tunnel.</li>
+</ul>
+
+<h3>Import config.json</h3>
+<p>The <strong>Import config.json</strong> button lets you load an existing <code>config.json</code> file back into the form. Click the button and select the file — all fields (inbound, VLESS URI, routing rules, DNS configuration, and logging settings) are populated automatically from the file. You can then adjust the configuration and regenerate an updated <code>config.json</code>.</p>
+<p>Only files generated by this tool are guaranteed to import correctly. Manually edited configs may import partially if they use structures not produced by the generator.</p>
+
+<h3>Share</h3>
+<p>The <strong>Share</strong> button encodes the entire form state — VLESS URI, inbound settings, routing rules, DNS configuration, and logging options — into a URL-safe parameter (<code>?s=…</code>) and copies the link to the clipboard. Opening the link on any device restores the exact configuration. The parameter is removed from the address bar after the state is restored.</p>
 
 <h3>Logging</h3>
 <p>When enabled, xray-core writes access and error events to a log file. This is useful for diagnosing connection issues.</p>
@@ -151,15 +198,44 @@ const TRANSLATIONS = {
         err_vless_prefix:       'VLESS URI must start with vless://',
         err_server:             'Could not connect to server: ',
         err_server_status:      'Server error: ',
+        theme_to_light:         'Switch to light theme',
+        theme_to_dark:          'Switch to dark theme',
+        preset_btn:             'Presets',
+        preset_russia:          'Russia',
+        preset_iran:            'Iran',
+        preset_ads:             'Block ads',
+        preset_all_proxy:       'All through proxy',
+        preset_bittorrent:      'Block BitTorrent',
+        share_btn:              'Share',
+        share_copied:           '✓ Link copied',
+        clear_rules_btn:        '✕ Clear rules',
+        import_btn:             'Import config.json',
+        import_error:           'Could not read the file. Make sure it is a valid config.json generated by this tool.',
+        dns_server_duplicate:   'This DNS server is already in the list.',
+        add_http_inbound_btn:     '+ Add HTTP inbound',
+        http_inbound_ip_hint:     'HTTP proxy address',
+        http_inbound_port_hint:   'HTTP proxy port',
+        mux_enabled_label:              'Enable Mux (multiplexing)',
+        mux_concurrency_label:          'Concurrency',
+        mux_concurrency_hint:           'Max concurrent TCP streams per connection (recommended: 8)',
+        mux_xudp_concurrency_label:     'XUDP concurrency',
+        mux_xudp_concurrency_hint:      'Max concurrent UDP streams per connection (recommended: 8)',
+        mux_xudp_proxy_udp443_label:    'UDP/443 (QUIC)',
+        mux_xudp_proxy_udp443_hint:     'How to handle QUIC traffic: reject — block, allow — proxy, skip — send directly',
+        sniffing_enabled_label:       'Enable sniffing',
+        sniffing_dest_override_label: 'Detect protocols (destOverride)',
+        sniffing_dest_override_hint:  'Protocols xray-core will sniff for on inbound traffic',
+        sniffing_route_only_label:    'Route only (routeOnly)',
+        sniffing_route_only_hint:     'Use detected protocol for routing only, without overriding the destination address',
     },
     ru: {
-        subtitle:               'Генерация <code>config.json</code> для xray-core из VLESS URL',
+        subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
         inbound_ip_label:       'IP-адрес',
         inbound_ip_hint:        'Адрес SOCKS5',
         inbound_port_label:     'Порт',
         inbound_port_hint:      'Порт SOCKS5',
-        vless_link_label:       'VLESS URL',
-        vless_link_hint:        'VLESS URL',
+        vless_link_label:       'VLESS URI',
+        vless_link_hint:        'VLESS URI',
         socks5_auth_label:      'Включить авторизацию SOCKS5',
         socks5_user_label:      'Имя пользователя',
         socks5_pass_label:      'Пароль',
@@ -203,7 +279,7 @@ const TRANSLATIONS = {
         log_level_label:        'Уровень журналирования',
         help_title:             'Справка',
         help_content:           `
-<p>Для базовой настройки достаточно вставить <strong>VLESS URL</strong> в соответствующее поле и нажать <strong>«Сгенерировать config.json»</strong>. Файл сразу готов к использованию с xray-core.</p>
+<p>Для базовой настройки достаточно вставить <strong>VLESS URI</strong> в соответствующее поле и нажать <strong>«Сгенерировать config.json»</strong>. Файл сразу готов к использованию с xray-core.</p>
 <p>Тем не менее мы рекомендуем уделить несколько минут более тонкой настройке клиента. Доступные параметры описаны ниже.</p>
 
 <p><strong>Как маршрутизация и DNS зависят друг от друга:</strong></p>
@@ -216,16 +292,17 @@ const TRANSLATIONS = {
 </ul>
 
 <h3>Inbound</h3>
-<p><strong>Inbound</strong> — это локальный SOCKS5-прокси, который xray-core открывает на вашем устройстве. Приложения (браузер, система) подключаются к нему, а xray-core пересылает их трафик через VLESS-туннель.</p>
+<p><strong>Inbound</strong> определяет локальный прокси, который xray-core открывает на вашем устройстве. Приложения (браузер, система) подключаются к нему, а xray-core пересылает их трафик через VLESS-туннель.</p>
 <p><strong>IP-адрес</strong> определяет, на каком сетевом интерфейсе xray-core будет принимать подключения:</p>
 <ul>
   <li><code>127.0.0.1</code> — рекомендуется для личных устройств (компьютеры, ноутбуки, телефоны). Подключиться к прокси может только само устройство; из локальной сети он недоступен.</li>
   <li><code>0.0.0.0</code> — прослушивает все доступные IP-адреса на устройстве. Другие устройства в той же сети смогут использовать этот прокси. Используйте осторожно.</li>
 </ul>
 <p><strong>Порт</strong> — локальный порт, на котором слушает SOCKS5-прокси. Значение по умолчанию <code>10808</code> подходит в большинстве случаев; измените его при конфликте с другим приложением.</p>
+<p><strong>HTTP inbound</strong> — нажмите <em>Добавить HTTP inbound</em>, чтобы добавить второй локальный прокси, принимающий запросы HTTP CONNECT, в дополнение к SOCKS5. Это полезно для приложений, которые поддерживают HTTP-прокси, но не поддерживают SOCKS5. Адрес по умолчанию: <code>127.0.0.1:8080</code>; IP и порт настраиваются. Нажмите ✕, чтобы удалить HTTP inbound.</p>
 
-<h3>VLESS URL</h3>
-<p>VLESS URL содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
+<h3>VLESS URI</h3>
+<p>VLESS URI содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
 <ul>
   <li><strong>TCP</strong> — TCP-транспорт с TLS или Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket-транспорт, как правило с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -238,8 +315,33 @@ const TRANSLATIONS = {
 <h3>Databases</h3>
 <p>В этом разделе отображается список геобаз данных, доступных на сервере. Они используются при настройке правил маршрутизации и DNS для сопоставления трафика по стране, региону или категории.</p>
 
+<h3>Sniffing</h3>
+<p>Сниффинг позволяет xray-core анализировать первые байты входящего трафика и определять протокол прикладного уровня. Определённый протокол можно использовать для более точной маршрутизации (например, отдельно обрабатывать BitTorrent и HTTPS), а при необходимости — подменять адрес назначения, извлечённый из рукопожатия протокола.</p>
+
+<p><strong>Включить сниффинг</strong> — при отключении xray-core передаёт трафик как есть, без определения протокола. Включён по умолчанию.</p>
+
+<p><strong>Определять протоколы (destOverride)</strong> — протоколы, которые xray-core будет пытаться идентифицировать:</p>
+<ul>
+  <li><code>http</code> — обычный HTTP/1.x-трафик (порт 80 и другие).</li>
+  <li><code>tls</code> — TLS-рукопожатие; xray-core извлекает SNI (имя сервера) из ClientHello для маршрутизации. Рекомендуется оставить включённым.</li>
+  <li><code>quic</code> — трафик QUIC/HTTP3.</li>
+  <li><code>bittorrent</code> — протокол BitTorrent; необходим, если вы хотите маршрутизировать или блокировать торренты по протоколу.</li>
+</ul>
+
+<p><strong>Только для маршрутизации (routeOnly)</strong> — при включении определённый протокол используется только для принятия решений о маршрутизации. xray-core <em>не будет</em> подменять оригинальный адрес назначения на тот, что извлечён из рукопожатия. Удобно, когда нужна маршрутизация по протоколу без изменения адреса назначения.</p>
+
 <h3>Routing</h3>
 <p>Маршрутизация определяет, как xray-core обрабатывает каждое соединение — отправить через прокси, пустить напрямую или заблокировать. Если раздел отключён, весь трафик идёт через прокси без фильтрации.</p>
+
+<p><strong>Пресеты</strong> — готовые наборы правил, которые можно комбинировать. Нажмите <em>Пресеты</em> и отметьте нужные галочками:</p>
+<ul>
+  <li><strong>Россия</strong> — локальный и российский трафик напрямую, реклама заблокирована. Устанавливает маршрут по умолчанию <code>proxy</code>.</li>
+  <li><strong>Иран</strong> — локальный и иранский трафик напрямую (требует <code>geoip_IR.dat</code> / <code>geosite_IR.dat</code>).</li>
+  <li><strong>Блокировать рекламу</strong> — блокирует домены из <code>category-ads-all</code>.</li>
+  <li><strong>Всё через прокси</strong> — включает маршрутизацию с маршрутом по умолчанию <code>proxy</code>, без добавления правил.</li>
+  <li><strong>Блокировать BitTorrent</strong> — добавляет правило блокировки всего BitTorrent-трафика на уровне протокола.</li>
+</ul>
+<p>Пресеты добавляют правила, не удаляя существующие. Дубликаты пропускаются. При отключении пресета удаляются только добавленные им правила. Кнопка <em>Очистить правила</em> сбрасывает всё сразу.</p>
 
 <p><strong>Маршрут по умолчанию</strong> — действие для трафика, который не попал ни под одно правило:</p>
 <ul>
@@ -260,7 +362,7 @@ const TRANSLATIONS = {
   <li><strong>Теги</strong> — одна или несколько категорий из выбранной базы (например, <code>ru</code>, <code>private</code>, <code>category-ads-all</code>). Нажмите на поле, чтобы открыть список, воспользуйтесь поиском или введите своё значение.</li>
   <li><strong>Действие</strong> — что делать с совпавшим трафиком: <code>proxy</code>, <code>direct</code> или <code>block</code>.</li>
 </ul>
-<p>Типичная настройка: локальный и российский трафик — напрямую, рекламу — блокировать, остальное — через прокси. Добавьте правила в таком порядке и установите маршрут по умолчанию <code>proxy</code>.</p>
+<p>Типичная настройка: применить пресет <em>Россия</em> и установить маршрут по умолчанию <code>proxy</code>.</p>
 
 <h3>DNS</h3>
 <p>Раздел позволяет настроить собственный DNS-резолвер для xray-core. Если раздел отключён, используется системный DNS. Настройка DNS рекомендуется для предотвращения утечек и для направления разных доменов в разные резолверы.</p>
@@ -283,8 +385,29 @@ const TRANSLATIONS = {
   <li><strong>Пресетом</strong> — Google DoH, Cloudflare DoH, Yandex DoH (все используют IP-адреса, чтобы не зависеть от начального резолвера) или их обычные DNS-аналоги.</li>
   <li><strong>Кастомным</strong> — укажите имя (используется как метка в правилах) и адрес: обычный IP (<code>8.8.8.8</code>) или DoH URL (<code>https://1.1.1.1/dns-query</code>).</li>
 </ul>
+<p>Каждый пресет можно добавить только один раз. При нажатии <em>Добавить сервер</em> автоматически выбирается первый незанятый пресет. При попытке вручную выбрать пресет, который уже есть в списке, выводится ошибка и выбор возвращается к предыдущему значению.</p>
 
 <p><strong>Правила DNS</strong> работают так же, как правила маршрутизации, но вместо действия указывают на один из настроенных DNS-серверов. Каждое правило состоит из базы данных, одного или нескольких тегов и целевого сервера. Например, можно отправлять все домены зоны <code>ru</code> на Yandex DNS, а всё остальное резолвить через Cloudflare DoH.</p>
+
+<h3>Mux</h3>
+<p>Mux (мультиплексирование) упаковывает несколько логических потоков в одно физическое TCP-соединение с сервером. Вместо того чтобы открывать новое соединение на каждый запрос — с отдельным TLS-рукопожатием — xray-core переиспользует одно соединение, снижая задержку для коротких и частых запросов (вкладки браузера, API-вызовы).</p>
+<p>Mux наиболее эффективен при высоком пинге до сервера, где каждое рукопожатие ощутимо замедляет работу. При передаче больших файлов или стриминге он может снизить производительность из-за блокировки начала очереди (head-of-line blocking) — все потоки делят один канал.</p>
+<p><strong>⚠ Несовместим с Reality + XTLS flow (<code>xtls-rprx-vision</code>).</strong> Если VLESS URI использует безопасность Reality с параметром <code>flow=xtls-rprx-vision</code>, настройка Mux игнорируется и блок <code>mux</code> в конфиг не записывается.</p>
+<p><strong>Concurrency</strong> — максимальное число TCP-потоков, одновременно мультиплексируемых в одном соединении. По умолчанию: 8.</p>
+<p><strong>XUDP concurrency</strong> — то же ограничение для UDP-потоков (протокол XUDP). По умолчанию: 8.</p>
+<p><strong>UDP/443 (QUIC)</strong> — определяет, как xray-core обрабатывает QUIC-трафик (UDP-порт 443):</p>
+<ul>
+  <li><code>reject</code> — блокировать QUIC; клиент переключится на TCP/TLS. Рекомендуется в большинстве случаев.</li>
+  <li><code>allow</code> — проксировать QUIC через туннель.</li>
+  <li><code>skip</code> — пустить QUIC напрямую, без туннеля.</li>
+</ul>
+
+<h3>Импортировать config.json</h3>
+<p>Кнопка <strong>Импортировать config.json</strong> позволяет загрузить существующий файл <code>config.json</code> обратно в форму. Нажмите кнопку и выберите файл — все поля (inbound, VLESS URI, правила маршрутизации, DNS и журналирование) будут заполнены автоматически. После этого можно скорректировать настройки и сгенерировать обновлённый <code>config.json</code>.</p>
+<p>Корректный импорт гарантирован только для файлов, созданных этим инструментом. Конфиги, отредактированные вручную, могут импортироваться частично, если содержат структуры, которые генератор не производит.</p>
+
+<h3>Поделиться</h3>
+<p>Кнопка <strong>Поделиться</strong> кодирует всё состояние формы — VLESS URI, настройки inbound, правила маршрутизации, конфигурацию DNS и параметры журналирования — в URL-безопасный параметр (<code>?s=…</code>) и копирует ссылку в буфер обмена. При открытии ссылки на любом устройстве конфигурация восстанавливается автоматически. Параметр удаляется из адресной строки после восстановления.</p>
 
 <h3>Logging</h3>
 <p>При включении xray-core записывает события доступа и ошибки в лог-файл. Это удобно для диагностики проблем с подключением.</p>
@@ -304,5 +427,34 @@ const TRANSLATIONS = {
         err_vless_prefix:       'VLESS URI должен начинаться с vless://',
         err_server:             'Не удалось связаться с сервером: ',
         err_server_status:      'Ошибка сервера: ',
+        theme_to_light:         'Светлая тема',
+        theme_to_dark:          'Тёмная тема',
+        preset_btn:             'Пресеты',
+        preset_russia:          'Россия',
+        preset_iran:            'Иран',
+        preset_ads:             'Блокировать рекламу',
+        preset_all_proxy:       'Всё через прокси',
+        preset_bittorrent:      'Блокировать BitTorrent',
+        share_btn:              'Поделиться',
+        share_copied:           '✓ Ссылка скопирована',
+        clear_rules_btn:        '✕ Очистить правила',
+        import_btn:             'Импортировать config.json',
+        import_error:           'Не удалось прочитать файл. Убедитесь, что это корректный config.json, созданный этим инструментом.',
+        dns_server_duplicate:   'Этот DNS-сервер уже есть в списке.',
+        add_http_inbound_btn:     '+ Добавить HTTP inbound',
+        http_inbound_ip_hint:     'Адрес HTTP-прокси',
+        http_inbound_port_hint:   'Порт HTTP-прокси',
+        mux_enabled_label:              'Включить Mux (мультиплексирование)',
+        mux_concurrency_label:          'Concurrency',
+        mux_concurrency_hint:           'Макс. число TCP-потоков в одном соединении (рекомендуется: 8)',
+        mux_xudp_concurrency_label:     'XUDP concurrency',
+        mux_xudp_concurrency_hint:      'Макс. число UDP-потоков в одном соединении (рекомендуется: 8)',
+        mux_xudp_proxy_udp443_label:    'UDP/443 (QUIC)',
+        mux_xudp_proxy_udp443_hint:     'Обработка QUIC-трафика: reject — блокировать, allow — проксировать, skip — пускать напрямую',
+        sniffing_enabled_label:       'Включить сниффинг',
+        sniffing_dest_override_label: 'Определять протоколы (destOverride)',
+        sniffing_dest_override_hint:  'Протоколы, которые xray-core будет определять во входящем трафике',
+        sniffing_route_only_label:    'Только для маршрутизации (routeOnly)',
+        sniffing_route_only_hint:     'Использовать определённый протокол только для маршрутизации, без подмены адреса назначения',
     },
 };
