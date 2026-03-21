@@ -472,12 +472,8 @@ function buildDns(array $serverDefs, array $rules, string $fallback, string $que
     if (empty($servers)) return null;
 
     $result = ['servers' => $servers];
-    if ($queryStrategy !== 'UseIPv4') {
-        $result['queryStrategy'] = $queryStrategy;
-    }
-    if ($domainStrategy !== 'IPIfNonMatch') {
-        $result['domainStrategy'] = $domainStrategy;
-    }
+    $result['queryStrategy'] = $queryStrategy;
+    $result['domainStrategy'] = $domainStrategy;
 
     return $result;
 }
