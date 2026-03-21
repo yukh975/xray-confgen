@@ -52,6 +52,26 @@ const TRANSLATIONS = {
         help_content:           `
 <p>For a basic setup, just paste your <strong>VLESS URL</strong> into the corresponding field and click <strong>Generate config.json</strong>. That's it — the file is ready to use with xray-core.</p>
 <p>However, we recommend taking a few extra minutes to fine-tune the client configuration. The sections below cover the available options.</p>
+
+<h3>Inbound</h3>
+<p>The <strong>inbound</strong> is the local SOCKS5 proxy that xray-core opens on your device. Applications (browser, system) connect to it, and xray-core forwards their traffic through the VLESS tunnel.</p>
+<p><strong>IP address</strong> defines which network interface xray-core listens on:</p>
+<ul>
+  <li><code>127.0.0.1</code> — recommended for personal devices (desktops, laptops, phones). Only the device itself can connect to the proxy; it is not accessible from the local network.</li>
+  <li><code>0.0.0.0</code> — listens on all available IP addresses on the device. Other devices on the same network can use this proxy. Use with caution.</li>
+</ul>
+<p><strong>Port</strong> is the local port the SOCKS5 proxy listens on. The default <code>10808</code> works in most cases; change it if there is a conflict with another application.</p>
+
+<h3>VLESS URL</h3>
+<p>The VLESS URL encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
+<ul>
+  <li><strong>TCP</strong> — plain TCP transport, with or without TLS/Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
+  <li><strong>WebSocket (WS)</strong> — WebSocket transport, typically with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
+  <li><strong>XHTTP / SplitHTTP</strong> — HTTP-based multiplexed transport:<br><code>vless://uuid@host:port?security=tls&amp;type=xhttp&amp;path=/&amp;mode=auto#name</code></li>
+  <li><strong>gRPC</strong> — gRPC transport with optional multi-mode:<br><code>vless://uuid@host:port?security=tls&amp;type=grpc&amp;serviceName=myservice#name</code></li>
+  <li><strong>HTTP/2 (h2)</strong> — HTTP/2 transport with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
+</ul>
+<p>Supported security types: <code>none</code>, <code>tls</code>, <code>reality</code>. The fragment after <code>#</code> is used as a human-readable name for the connection and is stored in the config as a comment.</p>
 `,
         remove_title:           'Remove',
         err_vless_prefix:       'VLESS URI must start with vless://',
@@ -111,6 +131,26 @@ const TRANSLATIONS = {
         help_content:           `
 <p>Для базовой настройки достаточно вставить <strong>VLESS URL</strong> в соответствующее поле и нажать <strong>Сгенерировать config.json</strong>. Файл сразу готов к использованию с xray-core.</p>
 <p>Тем не менее мы рекомендуем уделить несколько минут более тонкой настройке клиента. Доступные параметры описаны ниже.</p>
+
+<h3>Inbound</h3>
+<p><strong>Inbound</strong> — это локальный SOCKS5-прокси, который xray-core открывает на вашем устройстве. Приложения (браузер, система) подключаются к нему, а xray-core пересылает их трафик через VLESS-туннель.</p>
+<p><strong>IP-адрес</strong> определяет, на каком сетевом интерфейсе xray-core будет принимать подключения:</p>
+<ul>
+  <li><code>127.0.0.1</code> — рекомендуется для личных устройств (компьютеры, ноутбуки, телефоны). Подключиться к прокси может только само устройство; из локальной сети он недоступен.</li>
+  <li><code>0.0.0.0</code> — прослушивает все доступные IP-адреса на устройстве. Другие устройства в той же сети смогут использовать этот прокси. Используйте осторожно.</li>
+</ul>
+<p><strong>Порт</strong> — локальный порт, на котором слушает SOCKS5-прокси. Значение по умолчанию <code>10808</code> подходит в большинстве случаев; измените его при конфликте с другим приложением.</p>
+
+<h3>VLESS URL</h3>
+<p>VLESS URL содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
+<ul>
+  <li><strong>TCP</strong> — TCP-транспорт с TLS или Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
+  <li><strong>WebSocket (WS)</strong> — WebSocket-транспорт, как правило с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
+  <li><strong>XHTTP / SplitHTTP</strong> — мультиплексированный HTTP-транспорт:<br><code>vless://uuid@host:port?security=tls&amp;type=xhttp&amp;path=/&amp;mode=auto#name</code></li>
+  <li><strong>gRPC</strong> — gRPC-транспорт с опциональным multi-режимом:<br><code>vless://uuid@host:port?security=tls&amp;type=grpc&amp;serviceName=myservice#name</code></li>
+  <li><strong>HTTP/2 (h2)</strong> — HTTP/2-транспорт с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
+</ul>
+<p>Поддерживаемые типы безопасности: <code>none</code>, <code>tls</code>, <code>reality</code>. Фрагмент после <code>#</code> используется как читаемое имя подключения и сохраняется в конфиге в виде комментария.</p>
 `,
         remove_title:           'Удалить',
         err_vless_prefix:       'VLESS URI должен начинаться с vless://',
