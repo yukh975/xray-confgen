@@ -74,6 +74,7 @@ function setLang(lang) {
     const rules = collectRules();
     rulesContainer.innerHTML = '';
     rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    updateActionSelects();
 
     // Re-render DNS servers then rules
     const dnsServers = collectDnsServers();
@@ -163,6 +164,7 @@ const errorBox       = document.getElementById('error');
 const errorBackdrop  = document.getElementById('error-backdrop');
 const errorText      = document.getElementById('error-text');
 
+const vlessList      = document.getElementById('vless-list');
 const dbListEl       = document.getElementById('db-list');
 const rulesContainer = document.getElementById('routing-rules');
 const addRuleBtn     = document.getElementById('add-rule-btn');
@@ -194,7 +196,11 @@ function saveState() {
         socks5_auth:       document.getElementById('socks5_auth').checked,
         socks5_user:       document.getElementById('socks5_user').value,
         socks5_pass:       document.getElementById('socks5_pass').value,
-        vless_link:        document.getElementById('vless_link').value,
+        vless_entries:     collectVlessEntries(),
+        balancer_enabled:             document.getElementById('balancer_enabled')?.checked ?? false,
+        balancer_strategy:            document.getElementById('balancer_strategy')?.value  ?? 'random',
+        observatory_probe_url:        document.getElementById('observatory_probe_url')?.value        ?? 'https://www.google.com/generate_204',
+        observatory_probe_interval:   document.getElementById('observatory_probe_interval')?.value   ?? '10s',
         sniffing_enabled:          document.getElementById('sniffing_enabled').checked,
         sniffing_dest_http:        document.getElementById('sniffing_dest_http').checked,
         sniffing_dest_tls:         document.getElementById('sniffing_dest_tls').checked,
@@ -330,14 +336,165 @@ logEnabledCheckbox.addEventListener('change', () => {
 //  Auto-resize textarea
 // ============================================================
 
-const vlessTextarea = document.getElementById('vless_link');
-
 function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
 }
 
-vlessTextarea.addEventListener('input', () => autoResize(vlessTextarea));
+// ============================================================
+//  VLESS entry list
+// ============================================================
+
+function getVlessTag(name, index) {
+    const n = (name || '').trim();
+    if (n) return n;
+    return index === 0 ? 'proxy' : 'proxy' + (index + 1);
+}
+
+function getProxyOptions() {
+    const rows = [...vlessList.querySelectorAll('.vless-row')];
+    if (rows.length === 0) return [{ value: 'proxy', label: 'proxy' }];
+    return rows.map((row, i) => {
+        const name = row.querySelector('.vless-name').value.trim();
+        const tag  = getVlessTag(name, i);
+        return { value: tag, label: tag };
+    });
+}
+
+function populateActionSelect(select, currentValue) {
+    const current = currentValue ?? select.value;
+    const balancerEnabled = document.getElementById('balancer_enabled')?.checked;
+    select.innerHTML = '';
+    const opts = [
+        { value: 'direct', label: 'direct' },
+        ...getProxyOptions(),
+        { value: 'block',  label: 'block'  },
+    ];
+    if (balancerEnabled) opts.push({ value: 'balancer', label: 'balancer' });
+    opts.forEach(({ value, label }) => {
+        const opt = document.createElement('option');
+        opt.value       = value;
+        opt.textContent = label;
+        if (value === current) opt.selected = true;
+        select.appendChild(opt);
+    });
+    if (!select.value && select.options.length) select.selectedIndex = 0;
+}
+
+function updateActionSelects() {
+    rulesContainer.querySelectorAll('.rule-action').forEach(sel => {
+        populateActionSelect(sel, sel.value);
+    });
+    const def = document.getElementById('default_outbound');
+    if (def) {
+        const cur             = def.value;
+        const balancerEnabled = document.getElementById('balancer_enabled')?.checked;
+        def.innerHTML = '';
+        const opts = [
+            ...getProxyOptions(),
+            { value: 'direct', label: 'direct' },
+            ...(balancerEnabled ? [{ value: 'balancer', label: 'balancer' }] : []),
+        ];
+        opts.forEach(({ value, label }) => {
+            const opt = document.createElement('option');
+            opt.value       = value;
+            opt.textContent = label;
+            if (value === cur) opt.selected = true;
+            def.appendChild(opt);
+        });
+        if (!def.value && def.options.length) def.selectedIndex = 0;
+    }
+}
+
+function updateVlessPlaceholders() {
+    [...vlessList.querySelectorAll('.vless-row')].forEach((row, i) => {
+        row.querySelector('.vless-name').placeholder = i === 0 ? 'proxy' : 'proxy' + (i + 1);
+    });
+}
+
+function createVlessRow({ name = '', uri = '' } = {}) {
+    const row = document.createElement('div');
+    row.className = 'vless-row';
+
+    const nameGroup = document.createElement('div');
+    nameGroup.className = 'vless-name-group';
+
+    const nameInput = document.createElement('input');
+    nameInput.type      = 'text';
+    nameInput.className = 'vless-name';
+    nameInput.value     = name;
+    nameGroup.appendChild(nameInput);
+
+    const uriGroup = document.createElement('div');
+    uriGroup.className = 'vless-uri-group';
+
+    const uriTextarea = document.createElement('textarea');
+    uriTextarea.className   = 'vless-uri';
+    uriTextarea.placeholder = 'vless://uuid@host:port?security=tls&type=ws&path=/ws#name';
+    uriTextarea.value       = uri;
+    uriGroup.appendChild(uriTextarea);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type        = 'button';
+    removeBtn.className   = 'remove-btn';
+    removeBtn.title       = t('remove_title');
+    removeBtn.textContent = '✕';
+
+    nameInput.addEventListener('input', () => {
+        updateActionSelects();
+        updateVlessPlaceholders();
+        saveState();
+    });
+    uriTextarea.addEventListener('input', () => {
+        autoResize(uriTextarea);
+        saveState();
+    });
+    removeBtn.addEventListener('click', () => {
+        row.remove();
+        updateVlessPlaceholders();
+        updateActionSelects();
+        saveState();
+    });
+
+    row.appendChild(nameGroup);
+    row.appendChild(uriGroup);
+    row.appendChild(removeBtn);
+
+    autoResize(uriTextarea);
+    return row;
+}
+
+function collectVlessEntries() {
+    return [...vlessList.querySelectorAll('.vless-row')].map(row => ({
+        name: row.querySelector('.vless-name').value,
+        uri:  row.querySelector('.vless-uri').value,
+    }));
+}
+
+document.getElementById('add-vless-btn')?.addEventListener('click', () => {
+    vlessList.appendChild(createVlessRow());
+    updateVlessPlaceholders();
+    updateActionSelects();
+    saveState();
+});
+
+// ============================================================
+//  Balancer toggle
+// ============================================================
+
+const balancerEnabledCheckbox = document.getElementById('balancer_enabled');
+const balancerFields          = document.getElementById('balancer-fields');
+const observatoryFields       = document.getElementById('observatory-fields');
+const balancerStrategySelect  = document.getElementById('balancer_strategy');
+
+balancerEnabledCheckbox?.addEventListener('change', () => {
+    balancerFields.classList.toggle('hidden', !balancerEnabledCheckbox.checked);
+    updateActionSelects();
+});
+
+balancerStrategySelect?.addEventListener('change', () => {
+    observatoryFields.classList.toggle('hidden', balancerStrategySelect.value !== 'leastPing');
+});
 
 // ============================================================
 //  Database list renderer
@@ -668,11 +825,7 @@ function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule
 
     const actionSelect = document.createElement('select');
     actionSelect.className = 'rule-action';
-    actionSelect.innerHTML = `
-        <option value="direct" ${action === 'direct' ? 'selected' : ''}>direct</option>
-        <option value="proxy"  ${action === 'proxy'  ? 'selected' : ''}>proxy</option>
-        <option value="block"  ${action === 'block'  ? 'selected' : ''}>block</option>
-    `;
+    populateActionSelect(actionSelect, action);
 
     const removeBtn = document.createElement('button');
     removeBtn.type        = 'button';
@@ -694,6 +847,7 @@ function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule
 function loadDefaultRules() {
     rulesContainer.innerHTML = '';
     DEFAULT_RULES.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    updateActionSelects();
 }
 
 function collectRules() {
@@ -907,7 +1061,22 @@ function applyState(state) {
     document.getElementById('socks5_user').value         = state.socks5_user      ?? '';
     document.getElementById('socks5_pass').value         = state.socks5_pass      ?? '';
     socks5AuthFields.classList.toggle('hidden', !state.socks5_auth);
-    document.getElementById('vless_link').value          = state.vless_link       ?? '';
+    // Backward compat: vless_link → vless_entries
+    const vlessEntries = state.vless_entries ?? (state.vless_link ? [{ name: '', uri: state.vless_link }] : []);
+    vlessList.innerHTML = '';
+    if (vlessEntries.length === 0) {
+        vlessList.appendChild(createVlessRow());
+    } else {
+        vlessEntries.forEach(e => vlessList.appendChild(createVlessRow(e)));
+    }
+    updateVlessPlaceholders();
+    const balancerEnabled2 = state.balancer_enabled ?? false;
+    document.getElementById('balancer_enabled').checked           = balancerEnabled2;
+    document.getElementById('balancer_strategy').value            = state.balancer_strategy            ?? 'random';
+    document.getElementById('observatory_probe_url').value        = state.observatory_probe_url        ?? 'https://www.google.com/generate_204';
+    document.getElementById('observatory_probe_interval').value   = state.observatory_probe_interval   ?? '10s';
+    balancerFields.classList.toggle('hidden', !balancerEnabled2);
+    observatoryFields.classList.toggle('hidden', (state.balancer_strategy ?? 'random') !== 'leastPing');
     document.getElementById('sniffing_enabled').checked         = state.sniffing_enabled         ?? true;
     document.getElementById('sniffing_dest_http').checked       = state.sniffing_dest_http       ?? true;
     document.getElementById('sniffing_dest_tls').checked        = state.sniffing_dest_tls        ?? true;
@@ -944,11 +1113,11 @@ function applyState(state) {
     document.getElementById('log_dir').value        = state.log_dir    ?? '';
     document.getElementById('log_level').value      = state.log_level  ?? 'warning';
     logFields.classList.toggle('hidden', !state.log_enabled);
-    autoResize(vlessTextarea);
 
     rulesContainer.innerHTML = '';
     const rules = Array.isArray(state.rules) && state.rules.length ? state.rules : DEFAULT_RULES;
     rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    updateActionSelects();
 }
 
 // ============================================================
@@ -992,6 +1161,8 @@ function applyState(state) {
     if (state) {
         applyState(state);
     } else {
+        vlessList.appendChild(createVlessRow());
+        updateVlessPlaceholders();
         loadDefaultRules();
     }
 })();
@@ -1004,11 +1175,11 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAll();
 
-    const ip   = document.getElementById('inbound_ip').value.trim();
-    const port = parseInt(document.getElementById('inbound_port').value, 10);
-    const link = document.getElementById('vless_link').value.trim();
+    const ip      = document.getElementById('inbound_ip').value.trim();
+    const port    = parseInt(document.getElementById('inbound_port').value, 10);
+    const entries = collectVlessEntries().filter(e => e.uri.trim().startsWith('vless://'));
 
-    if (!link.startsWith('vless://')) {
+    if (entries.length === 0) {
         showError(t('err_vless_prefix'));
         return;
     }
@@ -1028,7 +1199,11 @@ form.addEventListener('submit', async (e) => {
                 socks5_auth:      document.getElementById('socks5_auth').checked,
                 socks5_user:      document.getElementById('socks5_user').value.trim(),
                 socks5_pass:      document.getElementById('socks5_pass').value,
-                vless_link:       link,
+                vless_entries:    entries.map(e => ({ name: e.name.trim(), uri: e.uri.trim() })),
+                balancer_enabled:           document.getElementById('balancer_enabled')?.checked ?? false,
+                balancer_strategy:          document.getElementById('balancer_strategy')?.value  ?? 'random',
+                observatory_probe_url:      document.getElementById('observatory_probe_url')?.value      ?? 'https://www.google.com/generate_204',
+                observatory_probe_interval: document.getElementById('observatory_probe_interval')?.value ?? '10s',
                 sniffing_enabled:      document.getElementById('sniffing_enabled').checked,
                 sniffing_dest_override: [
                     document.getElementById('sniffing_dest_http').checked      && 'http',
@@ -1088,6 +1263,15 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('socks5_user').value        = '';
     document.getElementById('socks5_pass').value        = '';
     socks5AuthFields.classList.add('hidden');
+    vlessList.innerHTML = '';
+    vlessList.appendChild(createVlessRow());
+    updateVlessPlaceholders();
+    document.getElementById('balancer_enabled').checked           = false;
+    document.getElementById('balancer_strategy').value            = 'random';
+    document.getElementById('observatory_probe_url').value        = 'https://www.google.com/generate_204';
+    document.getElementById('observatory_probe_interval').value   = '10s';
+    balancerFields.classList.add('hidden');
+    observatoryFields.classList.add('hidden');
     document.getElementById('sniffing_enabled').checked         = true;
     document.getElementById('sniffing_dest_http').checked       = true;
     document.getElementById('sniffing_dest_tls').checked        = true;
@@ -1119,6 +1303,7 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('log_level').value          = 'warning';
     logFields.classList.add('hidden');
     loadDefaultRules();
+    updateActionSelects();
     hideAll();
     localStorage.removeItem(LS_KEY);
 });
@@ -1156,7 +1341,9 @@ function togglePreset(preset) {
         routingFields.classList.remove('hidden');
 
         if (preset.outbound) {
-            document.getElementById('default_outbound').value = preset.outbound;
+            // Use first VLESS tag instead of hardcoded 'proxy'
+            const firstProxyTag = getProxyOptions()[0]?.value ?? 'proxy';
+            document.getElementById('default_outbound').value = firstProxyTag;
         }
 
         if (preset.bittorrent) {
@@ -1260,7 +1447,11 @@ function getShareUrl() {
         socks5_auth:         document.getElementById('socks5_auth').checked,
         socks5_user:         document.getElementById('socks5_user').value,
         socks5_pass:         document.getElementById('socks5_pass').value,
-        vless_link:          document.getElementById('vless_link').value,
+        vless_entries:       collectVlessEntries(),
+        balancer_enabled:             document.getElementById('balancer_enabled')?.checked ?? false,
+        balancer_strategy:            document.getElementById('balancer_strategy')?.value  ?? 'random',
+        observatory_probe_url:        document.getElementById('observatory_probe_url')?.value        ?? 'https://www.google.com/generate_204',
+        observatory_probe_interval:   document.getElementById('observatory_probe_interval')?.value   ?? '10s',
         sniffing_enabled:          document.getElementById('sniffing_enabled').checked,
         sniffing_dest_http:        document.getElementById('sniffing_dest_http').checked,
         sniffing_dest_tls:         document.getElementById('sniffing_dest_tls').checked,
@@ -1354,61 +1545,68 @@ function parseConfigJson(config) {
         state.sniffing_route_only      = false;
     }
 
-    // --- VLESS URI reconstruction ---
-    const vlessOut = (config.outbounds ?? []).find(o => o.protocol === 'vless');
-    if (vlessOut) {
+    // --- VLESS URI reconstruction (all outbounds) ---
+    function reconstructVlessUri(vlessOut) {
         const vnext = vlessOut.settings?.vnext?.[0];
         const user  = vnext?.users?.[0];
         const ss    = vlessOut.streamSettings ?? {};
         const name  = vlessOut._comment ?? '';
+        if (!vnext || !user) return null;
 
-        if (vnext && user) {
-            const uuid     = user.id;
-            const flow     = user.flow ?? '';
-            const host     = vnext.address;
-            const port     = vnext.port;
-            const network  = ss.network ?? 'tcp';
-            const security = ss.security ?? 'none';
+        const uuid     = user.id;
+        const flow     = user.flow ?? '';
+        const host     = vnext.address;
+        const port     = vnext.port;
+        const network  = ss.network ?? 'tcp';
+        const security = ss.security ?? 'none';
 
-            const params = new URLSearchParams();
-            if (network !== 'tcp')   params.set('type', network);
-            if (security !== 'none') params.set('security', security);
-            if (flow)                params.set('flow', flow);
+        const params = new URLSearchParams();
+        if (network !== 'tcp')   params.set('type', network);
+        if (security !== 'none') params.set('security', security);
+        if (flow)                params.set('flow', flow);
 
-            if (network === 'ws' && ss.wsSettings) {
-                if (ss.wsSettings.path)            params.set('path', ss.wsSettings.path);
-                if (ss.wsSettings.headers?.Host)   params.set('host', ss.wsSettings.headers.Host);
-            } else if (network === 'xhttp' && ss.xhttpSettings) {
-                if (ss.xhttpSettings.path) params.set('path', ss.xhttpSettings.path);
-                if (ss.xhttpSettings.mode) params.set('mode', ss.xhttpSettings.mode);
-                if (ss.xhttpSettings.host) params.set('host', ss.xhttpSettings.host);
-            } else if (network === 'grpc' && ss.grpcSettings) {
-                if (ss.grpcSettings.serviceName) params.set('serviceName', ss.grpcSettings.serviceName);
-                if (ss.grpcSettings.multiMode)   params.set('mode', 'multi');
-            } else if (network === 'h2' && ss.httpSettings) {
-                if (ss.httpSettings.path) params.set('path', ss.httpSettings.path);
-                const h2Host = Array.isArray(ss.httpSettings.host) ? ss.httpSettings.host[0] : ss.httpSettings.host;
-                if (h2Host) params.set('host', h2Host);
-            }
-
-            if (security === 'tls' && ss.tlsSettings) {
-                if (ss.tlsSettings.serverName) params.set('sni', ss.tlsSettings.serverName);
-                if (ss.tlsSettings.fingerprint) params.set('fp', ss.tlsSettings.fingerprint);
-                if (ss.tlsSettings.alpn?.length) params.set('alpn', ss.tlsSettings.alpn.join(','));
-            } else if (security === 'reality' && ss.realitySettings) {
-                if (ss.realitySettings.serverName)  params.set('sni', ss.realitySettings.serverName);
-                if (ss.realitySettings.fingerprint) params.set('fp',  ss.realitySettings.fingerprint);
-                if (ss.realitySettings.publicKey)   params.set('pbk', ss.realitySettings.publicKey);
-                if (ss.realitySettings.shortId)     params.set('sid', ss.realitySettings.shortId);
-                if (ss.realitySettings.spiderX)     params.set('spx', ss.realitySettings.spiderX);
-            }
-
-            const qs       = params.toString();
-            const fragment = name ? '#' + encodeURIComponent(name) : '';
-            state.vless_link = `vless://${uuid}@${host}:${port}${qs ? '?' + qs : ''}${fragment}`;
+        if (network === 'ws' && ss.wsSettings) {
+            if (ss.wsSettings.path)            params.set('path', ss.wsSettings.path);
+            if (ss.wsSettings.headers?.Host)   params.set('host', ss.wsSettings.headers.Host);
+        } else if (network === 'xhttp' && ss.xhttpSettings) {
+            if (ss.xhttpSettings.path) params.set('path', ss.xhttpSettings.path);
+            if (ss.xhttpSettings.mode) params.set('mode', ss.xhttpSettings.mode);
+            if (ss.xhttpSettings.host) params.set('host', ss.xhttpSettings.host);
+        } else if (network === 'grpc' && ss.grpcSettings) {
+            if (ss.grpcSettings.serviceName) params.set('serviceName', ss.grpcSettings.serviceName);
+            if (ss.grpcSettings.multiMode)   params.set('mode', 'multi');
+        } else if (network === 'h2' && ss.httpSettings) {
+            if (ss.httpSettings.path) params.set('path', ss.httpSettings.path);
+            const h2Host = Array.isArray(ss.httpSettings.host) ? ss.httpSettings.host[0] : ss.httpSettings.host;
+            if (h2Host) params.set('host', h2Host);
         }
+
+        if (security === 'tls' && ss.tlsSettings) {
+            if (ss.tlsSettings.serverName)  params.set('sni', ss.tlsSettings.serverName);
+            if (ss.tlsSettings.fingerprint) params.set('fp',  ss.tlsSettings.fingerprint);
+            if (ss.tlsSettings.alpn?.length) params.set('alpn', ss.tlsSettings.alpn.join(','));
+        } else if (security === 'reality' && ss.realitySettings) {
+            if (ss.realitySettings.serverName)  params.set('sni', ss.realitySettings.serverName);
+            if (ss.realitySettings.fingerprint) params.set('fp',  ss.realitySettings.fingerprint);
+            if (ss.realitySettings.publicKey)   params.set('pbk', ss.realitySettings.publicKey);
+            if (ss.realitySettings.shortId)     params.set('sid', ss.realitySettings.shortId);
+            if (ss.realitySettings.spiderX)     params.set('spx', ss.realitySettings.spiderX);
+        }
+
+        const qs       = params.toString();
+        const fragment = name ? '#' + encodeURIComponent(name) : '';
+        return {
+            uri:  `vless://${uuid}@${host}:${port}${qs ? '?' + qs : ''}${fragment}`,
+            // Use tag as name field unless it looks auto-generated (proxy, proxy2 ...)
+            name: /^proxy\d*$/.test(vlessOut.tag ?? '') ? '' : (vlessOut.tag ?? ''),
+        };
     }
-    state.vless_link = state.vless_link ?? '';
+
+    const vlessOuts = (config.outbounds ?? []).filter(o => o.protocol === 'vless');
+    state.vless_entries = vlessOuts.map(reconstructVlessUri).filter(Boolean);
+    if (state.vless_entries.length === 0) {
+        state.vless_entries = [{ name: '', uri: '' }];
+    }
 
     // --- Routing ---
     const routing = config.routing;
@@ -1421,7 +1619,7 @@ function parseConfigJson(config) {
 
         for (const rule of routing.rules ?? []) {
             if (rule.network === 'tcp,udp') {
-                state.default_outbound = rule.outboundTag ?? 'proxy';
+                state.default_outbound = rule.balancerTag ?? rule.outboundTag ?? 'proxy';
                 continue;
             }
             if (Array.isArray(rule.protocol) && rule.protocol.includes('bittorrent')) {
@@ -1556,6 +1754,24 @@ function parseConfigJson(config) {
         state.log_enabled = false;
         state.log_level   = 'warning';
         state.log_dir     = '';
+    }
+
+    // --- Balancer ---
+    const balancer = (config.routing?.balancers ?? [])[0];
+    if (balancer) {
+        state.balancer_enabled  = true;
+        state.balancer_strategy = balancer.strategy?.type ?? 'random';
+    } else {
+        state.balancer_enabled  = false;
+        state.balancer_strategy = 'random';
+    }
+    const obs = config.observatory;
+    if (obs) {
+        state.observatory_probe_url      = obs.probeUrl      ?? 'https://www.google.com/generate_204';
+        state.observatory_probe_interval = obs.probeInterval ?? '10s';
+    } else {
+        state.observatory_probe_url      = 'https://www.google.com/generate_204';
+        state.observatory_probe_interval = '10s';
     }
 
     // --- Mux ---

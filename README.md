@@ -47,9 +47,11 @@ The **inbound** defines the local proxy that xray-core opens on your device. App
 
 **HTTP inbound** — click *Add HTTP inbound* to add a second local proxy that accepts HTTP CONNECT requests (in addition to the SOCKS5 inbound). This is useful for applications that support HTTP proxy but not SOCKS5. The default address is `127.0.0.1:8080`. Configure IP and port the same way as for SOCKS5. Click ✕ to remove the HTTP inbound.
 
-### VLESS URL
+### VLESS
 
-The VLESS URL encodes all the parameters needed to connect to the remote server. The following formats are supported:
+This section holds one or more VLESS URIs — one per remote server. Each entry has an optional **Name** field and the URI itself. The name becomes the outbound tag used in routing rules; if left empty, tags are assigned automatically: `proxy` for the first entry, `proxy2`, `proxy3`, … for the rest. Click **+ Add VLESS** to add another server. Click ✕ to remove an entry.
+
+The following URI formats are supported:
 
 - **TCP** — plain TCP transport, with or without TLS/Reality:
   `vless://uuid@host:port?security=reality&flow=xtls-rprx-vision&pbk=...&sid=...&fp=chrome#name`
@@ -62,7 +64,17 @@ The VLESS URL encodes all the parameters needed to connect to the remote server.
 - **HTTP/2 (h2)** — HTTP/2 transport with TLS:
   `vless://uuid@host:port?security=tls&type=h2&path=/&host=example.com#name`
 
-Supported security types: `none`, `tls`, `reality`. The fragment after `#` is used as a human-readable name for the connection and is stored in the config as a comment.
+Supported security types: `none`, `tls`, `reality`. The fragment after `#` is stored in the config as a human-readable comment.
+
+### Balancer
+
+When you have multiple VLESS entries, the **Balancer** section lets you distribute traffic across them automatically. Enable the balancer to add a virtual `balancer` outbound, which can be selected as the action in routing rules or as the default outbound.
+
+Two strategies are available:
+- **random** — each connection is sent to a randomly selected server. No latency measurement required.
+- **leastPing** — each connection is sent to the server with the lowest measured latency. Requires **observatory**, which periodically probes all servers. Configure the probe URL (default: `https://www.google.com/generate_204`) and interval (default: `10s`).
+
+When the balancer is disabled, routing rules refer to individual server tags directly.
 
 ### Sniffing
 

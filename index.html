@@ -112,15 +112,47 @@
             <!-- VLESS -->
             <div class="section-title">VLESS</div>
 
+            <div id="vless-list">
+                <!-- populated by JS -->
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:8px">
+                <button type="button" id="add-vless-btn" class="add-btn" data-i18n="add_vless_btn"></button>
+            </div>
+
+            <!-- Balancer -->
+            <div class="section-title">Balancer</div>
+
             <div class="field-group">
-                <label for="vless_link" data-i18n="vless_link_label"></label>
-                <textarea
-                    id="vless_link"
-                    name="vless_link"
-                    placeholder="vless://uuid@host:port?security=tls&type=ws&path=/ws#name"
-                    required
-                ></textarea>
-                <span class="hint" data-i18n="vless_link_hint"></span>
+                <label class="toggle-row">
+                    <input type="checkbox" id="balancer_enabled" name="balancer_enabled">
+                    <span class="toggle-label" data-i18n="balancer_enabled_label"></span>
+                </label>
+                <div id="balancer-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px">
+                        <div class="field-group">
+                            <label for="balancer_strategy" data-i18n="balancer_strategy_label"></label>
+                            <select id="balancer_strategy">
+                                <option value="random">random</option>
+                                <option value="leastPing">leastPing</option>
+                            </select>
+                            <span class="hint" data-i18n="balancer_strategy_hint"></span>
+                        </div>
+                    </div>
+                    <div id="observatory-fields" class="hidden">
+                        <div class="field-row" style="margin-top:8px">
+                            <div class="field-group">
+                                <label for="observatory_probe_url" data-i18n="observatory_probe_url_label"></label>
+                                <input type="text" id="observatory_probe_url" value="https://www.google.com/generate_204">
+                                <span class="hint" data-i18n="observatory_probe_url_hint"></span>
+                            </div>
+                            <div class="field-group">
+                                <label for="observatory_probe_interval" data-i18n="observatory_probe_interval_label"></label>
+                                <input type="text" id="observatory_probe_interval" value="10s">
+                                <span class="hint" data-i18n="observatory_probe_interval_hint"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sniffing -->
@@ -172,8 +204,7 @@
                         <div class="field-group">
                             <label for="default_outbound" data-i18n="default_outbound_label"></label>
                             <select id="default_outbound">
-                                <option value="proxy">proxy</option>
-                                <option value="direct">direct</option>
+                                <!-- populated by JS -->
                             </select>
                         </div>
                         <div class="field-group">

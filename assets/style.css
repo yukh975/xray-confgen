@@ -597,6 +597,30 @@ button.secondary:hover {
     font-weight: 500;
 }
 
+/* VLESS entry rows */
+
+.vless-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.vless-name-group {
+    flex: 0 0 130px;
+}
+
+.vless-uri-group {
+    flex: 1;
+}
+
+.vless-uri-group textarea {
+    width: 100%;
+    resize: none;
+    min-height: 36px;
+    box-sizing: border-box;
+}
+
 /* Sniffing section */
 
 #sniffing-fields {
@@ -1213,7 +1237,15 @@ pre#result-json {
     }
 
     /* Routing rule rows: reflow into 2 rows
-       Row 1: [db select] [action] [remove]
+    .vless-row {
+        flex-wrap: wrap;
+    }
+
+    .vless-name-group {
+        flex: 0 0 100%;
+    }
+
+       /* Row 1: [db select] [action] [remove]
        Row 2: [value picker — full width]          */
     .rule-row {
         grid-template-columns: 1fr 70px 32px;

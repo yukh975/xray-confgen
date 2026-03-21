@@ -4,6 +4,22 @@
 
 # Changelog
 
+## v1.0.4 — unreleased
+
+### UI
+- VLESS section now supports multiple entries — each with an optional **Name** field and the URI; click **+ Add VLESS** to add more servers, ✕ to remove
+- **Balancer** section added between VLESS and Sniffing: enable toggle, strategy selector (random / leastPing), observatory probe URL and interval (shown only for leastPing)
+- Routing rule action dropdown and **Default outbound** selector are now dynamic: they reflect the current set of VLESS tags (and include a `balancer` option when the balancer is enabled)
+- VLESS name field placeholder shows the auto-generated tag name (proxy, proxy2, …)
+
+### Features
+- **Multiple outbounds**: each VLESS entry becomes a separate outbound in the config; tags are derived from the Name field or auto-assigned (proxy, proxy2, …)
+- **Balancer**: when enabled, a `balancers` block is added to routing with the configured strategy; routing rules and the catch-all can target the `balancer` outbound
+- **leastPing strategy**: when selected, an `observatory` top-level block is added with the configured probe URL and interval
+- **Import config.json** updated: all VLESS outbounds are imported as separate entries; balancer and observatory settings are restored
+
+---
+
 ## v1.0.3 — 2026-03-21
 
 ### UI

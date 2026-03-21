@@ -72,8 +72,9 @@ const TRANSLATIONS = {
 <p><strong>Port</strong> is the local port the SOCKS5 proxy listens on. The default <code>10808</code> works in most cases; change it if there is a conflict with another application.</p>
 <p><strong>HTTP inbound</strong> — click <em>Add HTTP inbound</em> to add a second local proxy that accepts HTTP CONNECT requests alongside the SOCKS5 inbound. This is useful for applications that support HTTP proxy but not SOCKS5. The default address is <code>127.0.0.1:8080</code>; IP and port can be changed. Click ✕ to remove the HTTP inbound.</p>
 
-<h3>VLESS URI</h3>
-<p>The VLESS URI encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
+<h3>VLESS</h3>
+<p>This section holds one or more VLESS URIs — one per outbound connection. Each entry has an optional <strong>Name</strong> field and the <strong>VLESS URI</strong> itself. The name becomes the outbound tag used in routing rules; if left empty, tags are assigned automatically: <code>proxy</code> for the first entry, <code>proxy2</code>, <code>proxy3</code>, … for subsequent ones.</p>
+<p>Click <strong>+ Add VLESS</strong> to add another server. Click ✕ to remove an entry. The following URI formats are supported:</p>
 <ul>
   <li><strong>TCP</strong> — plain TCP transport, with or without TLS/Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket transport, typically with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -81,7 +82,16 @@ const TRANSLATIONS = {
   <li><strong>gRPC</strong> — gRPC transport with optional multi-mode:<br><code>vless://uuid@host:port?security=tls&amp;type=grpc&amp;serviceName=myservice#name</code></li>
   <li><strong>HTTP/2 (h2)</strong> — HTTP/2 transport with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
 </ul>
-<p>Supported security types: <code>none</code>, <code>tls</code>, <code>reality</code>. The fragment after <code>#</code> is used as a human-readable name for the connection and is stored in the config as a comment.</p>
+<p>Supported security types: <code>none</code>, <code>tls</code>, <code>reality</code>. The fragment after <code>#</code> is used as a human-readable comment in the config.</p>
+
+<h3>Balancer</h3>
+<p>When you have multiple VLESS entries, the <strong>Balancer</strong> section lets you distribute traffic across them automatically instead of routing everything to a single server.</p>
+<p>Enable the balancer to add a virtual <code>balancer</code> outbound that can be selected as the action for routing rules and as the default outbound. xray-core will route each connection through one of the VLESS servers according to the chosen strategy:</p>
+<ul>
+  <li><strong>random</strong> — each connection is sent to a randomly selected server. Simple and fair distribution; no latency measurement required.</li>
+  <li><strong>leastPing</strong> — each connection is sent to the server with the lowest measured latency. Requires <strong>observatory</strong>, which periodically probes all servers. Set the probe URL and interval as needed.</li>
+</ul>
+<p>When the balancer is disabled, all routing rules and the default outbound refer to individual server tags directly.</p>
 
 <h3>Databases</h3>
 <p>This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.</p>
@@ -227,6 +237,15 @@ const TRANSLATIONS = {
         sniffing_dest_override_hint:  'Protocols xray-core will sniff for on inbound traffic',
         sniffing_route_only_label:    'Route only (routeOnly)',
         sniffing_route_only_hint:     'Use detected protocol for routing only, without overriding the destination address',
+        add_vless_btn:                '+ Add VLESS',
+        balancer_enabled_label:       'Enable load balancing',
+        balancer_strategy_label:      'Strategy',
+        balancer_strategy_hint:       'random: distribute connections equally across all servers; leastPing: route to the fastest server (requires observatory)',
+        observatory_probe_url_label:      'Probe URL',
+        observatory_probe_url_hint:       'URL used to measure connection latency to each server',
+        observatory_probe_interval_label: 'Probe interval',
+        observatory_probe_interval_hint:  'How often to probe each server (e.g. 10s, 1m)',
+        err_no_vless:                 'At least one VLESS URI is required (must start with vless://)',
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -301,8 +320,9 @@ const TRANSLATIONS = {
 <p><strong>Порт</strong> — локальный порт, на котором слушает SOCKS5-прокси. Значение по умолчанию <code>10808</code> подходит в большинстве случаев; измените его при конфликте с другим приложением.</p>
 <p><strong>HTTP inbound</strong> — нажмите <em>Добавить HTTP inbound</em>, чтобы добавить второй локальный прокси, принимающий запросы HTTP CONNECT, в дополнение к SOCKS5. Это полезно для приложений, которые поддерживают HTTP-прокси, но не поддерживают SOCKS5. Адрес по умолчанию: <code>127.0.0.1:8080</code>; IP и порт настраиваются. Нажмите ✕, чтобы удалить HTTP inbound.</p>
 
-<h3>VLESS URI</h3>
-<p>VLESS URI содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
+<h3>VLESS</h3>
+<p>В этом разделе можно добавить один или несколько VLESS URI — по одному на каждый удалённый сервер. Каждая запись состоит из необязательного поля <strong>Имя</strong> и самого <strong>VLESS URI</strong>. Имя становится тегом outbound, который используется в правилах маршрутизации; если поле оставить пустым, теги назначаются автоматически: <code>proxy</code> для первой записи, <code>proxy2</code>, <code>proxy3</code>, … для последующих.</p>
+<p>Нажмите <strong>+ Добавить VLESS</strong>, чтобы добавить ещё один сервер. Нажмите ✕, чтобы удалить запись. Поддерживаются следующие форматы URI:</p>
 <ul>
   <li><strong>TCP</strong> — TCP-транспорт с TLS или Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket-транспорт, как правило с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -310,7 +330,16 @@ const TRANSLATIONS = {
   <li><strong>gRPC</strong> — gRPC-транспорт с опциональным multi-режимом:<br><code>vless://uuid@host:port?security=tls&amp;type=grpc&amp;serviceName=myservice#name</code></li>
   <li><strong>HTTP/2 (h2)</strong> — HTTP/2-транспорт с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
 </ul>
-<p>Поддерживаемые типы безопасности: <code>none</code>, <code>tls</code>, <code>reality</code>. Фрагмент после <code>#</code> используется как читаемое имя подключения и сохраняется в конфиге в виде комментария.</p>
+<p>Поддерживаемые типы безопасности: <code>none</code>, <code>tls</code>, <code>reality</code>. Фрагмент после <code>#</code> используется как читаемый комментарий в конфиге.</p>
+
+<h3>Balancer</h3>
+<p>При наличии нескольких VLESS-записей раздел <strong>Balancer</strong> позволяет автоматически распределять трафик между серверами, не настраивая маршрутизацию вручную.</p>
+<p>При включении балансировщика появляется виртуальный outbound <code>balancer</code>, который можно выбрать в правилах маршрутизации и в качестве маршрута по умолчанию. xray-core будет направлять соединения на серверы в соответствии с выбранной стратегией:</p>
+<ul>
+  <li><strong>random</strong> — каждое соединение направляется на случайно выбранный сервер. Простое и равномерное распределение; измерение задержки не требуется.</li>
+  <li><strong>leastPing</strong> — каждое соединение направляется на сервер с наименьшей измеренной задержкой. Требует <strong>observatory</strong>, который периодически проверяет доступность серверов. Настройте URL и интервал проверки при необходимости.</li>
+</ul>
+<p>При отключённом балансировщике правила маршрутизации и маршрут по умолчанию ссылаются непосредственно на теги отдельных серверов.</p>
 
 <h3>Databases</h3>
 <p>В этом разделе отображается список геобаз данных, доступных на сервере. Они используются при настройке правил маршрутизации и DNS для сопоставления трафика по стране, региону или категории.</p>
@@ -456,5 +485,14 @@ const TRANSLATIONS = {
         sniffing_dest_override_hint:  'Протоколы, которые xray-core будет определять во входящем трафике',
         sniffing_route_only_label:    'Только для маршрутизации (routeOnly)',
         sniffing_route_only_hint:     'Использовать определённый протокол только для маршрутизации, без подмены адреса назначения',
+        add_vless_btn:                '+ Добавить VLESS',
+        balancer_enabled_label:       'Включить балансировку нагрузки',
+        balancer_strategy_label:      'Стратегия',
+        balancer_strategy_hint:       'random: распределять соединения равномерно по всем серверам; leastPing: направлять на самый быстрый сервер (требует observatory)',
+        observatory_probe_url_label:      'URL проверки',
+        observatory_probe_url_hint:       'URL для измерения задержки до каждого сервера',
+        observatory_probe_interval_label: 'Интервал проверки',
+        observatory_probe_interval_hint:  'Как часто проверять серверы (например, 10s, 1m)',
+        err_no_vless:                 'Требуется хотя бы один VLESS URI (должен начинаться с vless://)',
     },
 };

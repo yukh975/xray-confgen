@@ -22,14 +22,24 @@ $inboundPort     = (int)($in['inbound_port']             ?? 0);
 $socks5Auth      = (bool)($in['socks5_auth']             ?? false);
 $socks5User      = trim((string)($in['socks5_user']      ?? ''));
 $socks5Pass      = (string)($in['socks5_pass']           ?? '');
-$vlessLink       = trim((string)($in['vless_link']       ?? ''));
 $routingEnabled  = (bool)($in['routing_enabled']         ?? false);
 $blockBittorrent = (bool)($in['block_bittorrent']        ?? false);
-$defaultOutbound = in_array($in['default_outbound'] ?? '', ['proxy', 'direct'], true)
-    ? $in['default_outbound'] : 'proxy';
 $domainStrategy  = in_array($in['domain_strategy'] ?? '', ['IPIfNonMatch', 'IPOnDemand', 'AsIs'], true)
     ? $in['domain_strategy'] : 'IPIfNonMatch';
 $routingRules    = is_array($in['routing_rules'] ?? null) ? $in['routing_rules'] : [];
+
+// Multi-VLESS: support new vless_entries array and legacy vless_link
+$rawVlessEntries = is_array($in['vless_entries'] ?? null) ? $in['vless_entries'] : null;
+if ($rawVlessEntries === null && isset($in['vless_link'])) {
+    $rawVlessEntries = [['name' => '', 'uri' => trim((string)$in['vless_link'])]];
+}
+$rawVlessEntries = $rawVlessEntries ?? [];
+
+$balancerEnabled          = (bool)($in['balancer_enabled'] ?? false);
+$balancerStrategy         = in_array($in['balancer_strategy'] ?? '', ['random', 'leastPing'], true)
+    ? $in['balancer_strategy'] : 'random';
+$observatoryProbeUrl      = trim((string)($in['observatory_probe_url']      ?? 'https://www.google.com/generate_204'));
+$observatoryProbeInterval = trim((string)($in['observatory_probe_interval'] ?? '10s'));
 $dnsEnabled      = (bool)($in['dns_enabled']  ?? false);
 $dnsQueryStrategy = in_array($in['dns_query_strategy'] ?? '', ['UseIP', 'UseIPv4', 'UseIPv6', 'ForceIP', 'ForceIPv4', 'ForceIPv6', 'useSystem'], true)
     ? $in['dns_query_strategy'] : 'UseIPv4';
@@ -62,9 +72,31 @@ if ($inboundIp === '' || filter_var($inboundIp, FILTER_VALIDATE_IP) === false) {
 if ($inboundPort < 1 || $inboundPort > 65535) {
     err('Inbound port must be in range 1–65535');
 }
-if (!str_starts_with($vlessLink, 'vless://')) {
-    err('Link must start with vless://');
+
+// Parse and validate VLESS entries
+$vlessEntries = [];
+foreach ($rawVlessEntries as $entry) {
+    $uri  = trim((string)($entry['uri'] ?? ''));
+    $name = trim((string)($entry['name'] ?? ''));
+    if (!str_starts_with($uri, 'vless://')) continue;
+    $vlessEntries[] = ['name' => $name, 'uri' => $uri, 'parsed' => parseVless($uri)];
 }
+if (empty($vlessEntries)) {
+    err('At least one valid VLESS URI is required (must start with vless://)');
+}
+
+// Build outbound tags
+$outboundTags = [];
+foreach ($vlessEntries as $i => $entry) {
+    $outboundTags[] = makeOutboundTag($entry['name'], $i);
+}
+
+// Validate default outbound against available tags
+$validOutbounds = array_merge($outboundTags, ['direct']);
+if ($balancerEnabled) $validOutbounds[] = 'balancer';
+$rawDefault = $in['default_outbound'] ?? $outboundTags[0];
+$defaultOutbound = in_array($rawDefault, $validOutbounds, true) ? $rawDefault : $outboundTags[0];
+
 if ($httpInboundEnabled) {
     if (filter_var($httpInboundIp, FILTER_VALIDATE_IP) === false) {
         err('Invalid HTTP inbound IP address');
@@ -74,14 +106,20 @@ if ($httpInboundEnabled) {
     }
 }
 
-// --- Parse & build ---------------------------------------------------------
+// --- Build -----------------------------------------------------------------
 
-$parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly, $httpInboundEnabled, $httpInboundIp, $httpInboundPort, $muxEnabled, $muxConcurrency, $muxXudpConcurrency, $muxXudpProxyUDP443);
+$config = buildConfig($inboundIp, $inboundPort, $vlessEntries, $outboundTags, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly, $httpInboundEnabled, $httpInboundIp, $httpInboundPort, $muxEnabled, $muxConcurrency, $muxXudpConcurrency, $muxXudpProxyUDP443, $balancerEnabled, $balancerStrategy, $observatoryProbeUrl, $observatoryProbeInterval);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
 // ---------------------------------------------------------------------------
+
+function makeOutboundTag(string $name, int $index): string
+{
+    $name = trim($name);
+    if ($name !== '') return $name;
+    return $index === 0 ? 'proxy' : 'proxy' . ($index + 1);
+}
 
 function parseVless(string $link): array
 {
@@ -175,7 +213,7 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false, bool $httpInboundEnabled = false, string $httpInboundIp = '127.0.0.1', int $httpInboundPort = 8080, bool $muxEnabled = false, int $muxConcurrency = 8, int $muxXudpConcurrency = 8, string $muxXudpProxyUDP443 = 'reject'): array
+function buildConfig(string $ip, int $port, array $vlessEntries, array $outboundTags, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false, bool $httpInboundEnabled = false, string $httpInboundIp = '127.0.0.1', int $httpInboundPort = 8080, bool $muxEnabled = false, int $muxConcurrency = 8, int $muxXudpConcurrency = 8, string $muxXudpProxyUDP443 = 'reject', bool $balancerEnabled = false, string $balancerStrategy = 'random', string $observatoryProbeUrl = 'https://www.google.com/generate_204', string $observatoryProbeInterval = '10s'): array
 {
     $socksSettings = ['auth' => 'noauth', 'udp' => true];
     if ($socks5Auth && $socks5User !== '') {
@@ -199,39 +237,46 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
         $inbound['sniffing'] = $sniffing;
     }
 
-    $userEntry = ['id' => $v['uuid'], 'encryption' => 'none'];
-    if ($v['flow'] !== '') {
-        $userEntry['flow'] = $v['flow'];
-    }
+    // Build VLESS outbounds
+    $vlessOutbounds = [];
+    foreach ($vlessEntries as $i => $entry) {
+        $v   = $entry['parsed'];
+        $tag = $outboundTags[$i];
 
-    $streamSettings = buildStreamSettings($v);
+        $userEntry = ['id' => $v['uuid'], 'encryption' => 'none'];
+        if ($v['flow'] !== '') {
+            $userEntry['flow'] = $v['flow'];
+        }
 
-    $outbound = [
-        'tag'      => 'proxy',
-        'protocol' => 'vless',
-        'settings' => [
-            'vnext' => [[
-                'address' => $v['host'],
-                'port'    => $v['port'],
-                'users'   => [$userEntry],
-            ]],
-        ],
-        'streamSettings' => $streamSettings,
-    ];
-
-    if ($v['name'] !== '') {
-        $outbound['_comment'] = $v['name'];
-    }
-
-    // Mux is incompatible with Reality + XTLS flow — silently skip if that combination is used
-    $isRealityFlow = $v['security'] === 'reality' && $v['flow'] !== '';
-    if ($muxEnabled && !$isRealityFlow) {
-        $outbound['mux'] = [
-            'enabled'         => true,
-            'concurrency'     => $muxConcurrency,
-            'xudpConcurrency' => $muxXudpConcurrency,
-            'xudpProxyUDP443' => $muxXudpProxyUDP443,
+        $outbound = [
+            'tag'            => $tag,
+            'protocol'       => 'vless',
+            'settings'       => [
+                'vnext' => [[
+                    'address' => $v['host'],
+                    'port'    => $v['port'],
+                    'users'   => [$userEntry],
+                ]],
+            ],
+            'streamSettings' => buildStreamSettings($v),
         ];
+
+        if ($v['name'] !== '') {
+            $outbound['_comment'] = $v['name'];
+        }
+
+        // Mux is incompatible with Reality + XTLS flow — silently skip if that combination is used
+        $isRealityFlow = $v['security'] === 'reality' && $v['flow'] !== '';
+        if ($muxEnabled && !$isRealityFlow) {
+            $outbound['mux'] = [
+                'enabled'         => true,
+                'concurrency'     => $muxConcurrency,
+                'xudpConcurrency' => $muxXudpConcurrency,
+                'xudpProxyUDP443' => $muxXudpProxyUDP443,
+            ];
+        }
+
+        $vlessOutbounds[] = $outbound;
     }
 
     if ($logEnabled && $logDir !== '') {
@@ -256,15 +301,17 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
     $config = [
         'log'       => $log,
         'inbounds'  => $inbounds,
-        'outbounds' => [
-            $outbound,
-            ['tag' => 'direct', 'protocol' => 'freedom'],
-            ['tag' => 'block',  'protocol' => 'blackhole'],
-        ],
+        'outbounds' => array_merge(
+            $vlessOutbounds,
+            [
+                ['tag' => 'direct', 'protocol' => 'freedom'],
+                ['tag' => 'block',  'protocol' => 'blackhole'],
+            ]
+        ),
     ];
 
     if ($routingEnabled) {
-        $routing = buildRouting($routingRules, $blockBittorrent, $defaultOutbound, $domainStrategy);
+        $routing = buildRouting($routingRules, $blockBittorrent, $defaultOutbound, $domainStrategy, $outboundTags, $balancerEnabled, $balancerStrategy);
         if ($routing !== null) {
             $config['routing'] = $routing;
         }
@@ -275,6 +322,16 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
         if ($dns !== null) {
             $config['dns'] = $dns;
         }
+    }
+
+    // Observatory is needed for leastPing balancer strategy
+    if ($balancerEnabled && $balancerStrategy === 'leastPing') {
+        $config['observatory'] = [
+            'subjectSelector'   => $outboundTags,
+            'probeUrl'          => $observatoryProbeUrl,
+            'probeInterval'     => $observatoryProbeInterval,
+            'enableConcurrency' => false,
+        ];
     }
 
     return $config;
@@ -356,7 +413,7 @@ function buildStreamSettings(array $v): array
     return $ss;
 }
 
-function buildRouting(array $rules, bool $blockBittorrent = false, string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch'): ?array
+function buildRouting(array $rules, bool $blockBittorrent = false, string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', array $outboundTags = ['proxy'], bool $balancerEnabled = false, string $balancerStrategy = 'random'): ?array
 {
     $xrayRules = [];
 
@@ -368,7 +425,8 @@ function buildRouting(array $rules, bool $blockBittorrent = false, string $defau
         ];
     }
 
-    $allowedActions = ['direct', 'proxy', 'block'];
+    $allowedActions = array_merge(['direct', 'block'], $outboundTags);
+    if ($balancerEnabled) $allowedActions[] = 'balancer';
 
     foreach ($rules as $rule) {
         $type = $rule['rule_type'] ?? '';
@@ -376,7 +434,7 @@ function buildRouting(array $rules, bool $blockBittorrent = false, string $defau
         if ($db !== '' && !preg_match('/^[a-zA-Z0-9_\-]+\.dat$/', $db)) {
             continue; // skip rules with invalid db filename
         }
-        $action = $rule['action'] ?? 'proxy';
+        $action = $rule['action'] ?? $outboundTags[0];
 
         // Support both new `values` array and legacy `value` string
         $rawValues = [];
@@ -398,7 +456,12 @@ function buildRouting(array $rules, bool $blockBittorrent = false, string $defau
 
         if (empty($formatted)) continue;
 
-        $xrayRule = ['type' => 'field', 'outboundTag' => $action];
+        // Balancer rules use balancerTag instead of outboundTag
+        if ($action === 'balancer' && $balancerEnabled) {
+            $xrayRule = ['type' => 'field', 'balancerTag' => 'balancer'];
+        } else {
+            $xrayRule = ['type' => 'field', 'outboundTag' => $action];
+        }
         if ($type === 'ip') {
             $xrayRule['ip'] = $formatted;
         } else {
@@ -409,16 +472,26 @@ function buildRouting(array $rules, bool $blockBittorrent = false, string $defau
     }
 
     // Catch-all rule for unmatched traffic
-    $xrayRules[] = [
-        'type'        => 'field',
-        'network'     => 'tcp,udp',
-        'outboundTag' => $defaultOutbound,
-    ];
+    if ($defaultOutbound === 'balancer' && $balancerEnabled) {
+        $xrayRules[] = ['type' => 'field', 'network' => 'tcp,udp', 'balancerTag' => 'balancer'];
+    } else {
+        $xrayRules[] = ['type' => 'field', 'network' => 'tcp,udp', 'outboundTag' => $defaultOutbound];
+    }
 
-    return [
+    $result = [
         'domainStrategy' => $domainStrategy,
         'rules'          => $xrayRules,
     ];
+
+    if ($balancerEnabled) {
+        $result['balancers'] = [[
+            'tag'      => 'balancer',
+            'selector' => $outboundTags,
+            'strategy' => ['type' => $balancerStrategy],
+        ]];
+    }
+
+    return $result;
 }
 
 /**
