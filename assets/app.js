@@ -809,7 +809,12 @@ function collectDnsRules() {
 }
 
 addDnsServerBtn.addEventListener('click', () => {
-    dnsServersEl.appendChild(createDnsServerRow());
+    const usedPresets = new Set(
+        [...dnsServersEl.querySelectorAll('.dns-preset')].map(s => s.value)
+    );
+    const allPresets = ['google_doh', 'cloudflare_doh', 'yandex_doh', 'google_dns', 'cloudflare_dns', 'yandex_dns'];
+    const preset = allPresets.find(p => !usedPresets.has(p)) ?? 'custom';
+    dnsServersEl.appendChild(createDnsServerRow({ preset }));
     updateRuleServerSelects();
     saveState();
 });
