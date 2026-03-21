@@ -23,6 +23,11 @@ function applyLang() {
         el.innerHTML = t(el.dataset.i18nHtml);
     });
 
+    // Update title attributes
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = t(el.dataset.i18nTitle);
+    });
+
     // Highlight the active language button
     document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
     document.getElementById('lang-ru').classList.toggle('active', currentLang === 'ru');
@@ -909,6 +914,29 @@ clearBtn.addEventListener('click', () => {
 //  Result helpers
 // ============================================================
 
+// ============================================================
+//  Help modal
+// ============================================================
+
+const helpModal = document.getElementById('help');
+
+function openHelp() {
+    helpModal.classList.remove('hidden');
+    errorBackdrop.classList.remove('hidden');
+}
+
+function closeHelp() {
+    helpModal.classList.add('hidden');
+    errorBackdrop.classList.add('hidden');
+}
+
+document.getElementById('help-btn').addEventListener('click', openHelp);
+document.getElementById('help-close').addEventListener('click', closeHelp);
+
+// ============================================================
+//  Result helpers
+// ============================================================
+
 function closeResult() {
     resultBox.classList.add('hidden');
     errorBackdrop.classList.add('hidden');
@@ -924,6 +952,7 @@ document.getElementById('error-close').addEventListener('click', closeError);
 errorBackdrop.addEventListener('click', () => {
     closeResult();
     closeError();
+    closeHelp();
 });
 
 function showError(msg) {
@@ -943,6 +972,7 @@ function showResult(json) {
 function hideAll() {
     closeResult();
     closeError();
+    closeHelp();
 }
 
 // ============================================================
