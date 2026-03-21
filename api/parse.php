@@ -416,9 +416,9 @@ function formatGeoValue(string $value, string $prefix, string $db): string
 function buildDns(array $serverDefs, array $rules, string $fallback, string $queryStrategy = 'UseIPv4', string $domainStrategy = 'IPIfNonMatch'): ?array
 {
     $presets = [
-        'google_doh'     => 'https://dns.google/dns-query',
-        'cloudflare_doh' => 'https://cloudflare-dns.com/dns-query',
-        'yandex_doh'     => 'https://dns.yandex.com/dns-query',
+        'google_doh'     => 'https://8.8.8.8/dns-query',
+        'cloudflare_doh' => 'https://1.1.1.1/dns-query',
+        'yandex_doh'     => 'https://77.88.8.8/dns-query',
         'google_dns'     => '8.8.8.8',
         'cloudflare_dns' => '1.1.1.1',
         'yandex_dns'     => '77.88.8.8',

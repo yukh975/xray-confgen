@@ -57,9 +57,9 @@ document.getElementById('lang-ru').addEventListener('click', () => setLang('ru')
 const DEFAULT_DATABASES = ['geosite.dat', 'geoip.dat']; // fallback if server unavailable
 
 const DNS_PRESETS = {
-    google_doh:     'https://dns.google/dns-query',
-    cloudflare_doh: 'https://cloudflare-dns.com/dns-query',
-    yandex_doh:     'https://dns.yandex.com/dns-query',
+    google_doh:     'https://8.8.8.8/dns-query',
+    cloudflare_doh: 'https://1.1.1.1/dns-query',
+    yandex_doh:     'https://77.88.8.8/dns-query',
     google_dns:     '8.8.8.8',
     cloudflare_dns: '1.1.1.1',
     yandex_dns:     '77.88.8.8',
