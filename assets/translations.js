@@ -88,6 +88,16 @@ const TRANSLATIONS = {
 <h3>Routing</h3>
 <p>Routing determines how xray-core handles each connection — whether to send it through the proxy, route it directly, or block it entirely. If the section is disabled, all traffic goes through the proxy without any filtering.</p>
 
+<p><strong>Presets</strong> — ready-made rule sets that can be combined. Click <em>Presets</em> to open the list and check one or more:</p>
+<ul>
+  <li><strong>Russia</strong> — route local and Russian traffic directly, block ads. Sets default outbound to <code>proxy</code>.</li>
+  <li><strong>Iran</strong> — route local and Iranian traffic directly (requires <code>geoip_IR.dat</code> / <code>geosite_IR.dat</code>).</li>
+  <li><strong>Block ads</strong> — block domains in <code>category-ads-all</code>.</li>
+  <li><strong>All through proxy</strong> — enable routing with default outbound <code>proxy</code>, no additional rules.</li>
+  <li><strong>Block BitTorrent</strong> — add a protocol-level rule that blocks all BitTorrent traffic.</li>
+</ul>
+<p>Presets add rules without replacing existing ones. Duplicate rules are skipped. Unchecking a preset removes only the rules it added. Use <em>Clear rules</em> to reset everything at once.</p>
+
 <p><strong>Default outbound</strong> is the action applied to traffic that does not match any rule:</p>
 <ul>
   <li><code>proxy</code> — send unmatched traffic through the VLESS tunnel (recommended when you want most traffic proxied).</li>
@@ -107,7 +117,7 @@ const TRANSLATIONS = {
   <li><strong>Tags</strong> — one or more categories from the selected database (e.g. <code>ru</code>, <code>private</code>, <code>category-ads-all</code>). Click the field to open the picker, search by name, or type a custom value.</li>
   <li><strong>Action</strong> — what to do with matching traffic: <code>proxy</code>, <code>direct</code>, or <code>block</code>.</li>
 </ul>
-<p>A typical setup: route local and Russian traffic directly, block ads, and proxy everything else. Add rules in that order and set the default outbound to <code>proxy</code>.</p>
+<p>A typical setup: apply the <em>Russia</em> preset and set the default outbound to <code>proxy</code>.</p>
 
 <h3>DNS</h3>
 <p>This section lets you configure a custom DNS resolver for xray-core. When disabled, the system DNS is used. Configuring DNS is recommended to avoid leaks and to direct different domains to different resolvers.</p>
@@ -158,6 +168,7 @@ const TRANSLATIONS = {
         preset_iran:            'Iran',
         preset_ads:             'Block ads',
         preset_all_proxy:       'All through proxy',
+        preset_bittorrent:      'Block BitTorrent',
         share_btn:              'Share',
         share_copied:           '✓ Link copied',
         clear_rules_btn:        '✕ Clear rules',
@@ -251,6 +262,16 @@ const TRANSLATIONS = {
 <h3>Routing</h3>
 <p>Маршрутизация определяет, как xray-core обрабатывает каждое соединение — отправить через прокси, пустить напрямую или заблокировать. Если раздел отключён, весь трафик идёт через прокси без фильтрации.</p>
 
+<p><strong>Пресеты</strong> — готовые наборы правил, которые можно комбинировать. Нажмите <em>Пресеты</em> и отметьте нужные галочками:</p>
+<ul>
+  <li><strong>Россия</strong> — локальный и российский трафик напрямую, реклама заблокирована. Устанавливает маршрут по умолчанию <code>proxy</code>.</li>
+  <li><strong>Иран</strong> — локальный и иранский трафик напрямую (требует <code>geoip_IR.dat</code> / <code>geosite_IR.dat</code>).</li>
+  <li><strong>Блокировать рекламу</strong> — блокирует домены из <code>category-ads-all</code>.</li>
+  <li><strong>Всё через прокси</strong> — включает маршрутизацию с маршрутом по умолчанию <code>proxy</code>, без добавления правил.</li>
+  <li><strong>Блокировать BitTorrent</strong> — добавляет правило блокировки всего BitTorrent-трафика на уровне протокола.</li>
+</ul>
+<p>Пресеты добавляют правила, не удаляя существующие. Дубликаты пропускаются. При отключении пресета удаляются только добавленные им правила. Кнопка <em>Очистить правила</em> сбрасывает всё сразу.</p>
+
 <p><strong>Маршрут по умолчанию</strong> — действие для трафика, который не попал ни под одно правило:</p>
 <ul>
   <li><code>proxy</code> — пустить несовпавший трафик через VLESS-туннель (рекомендуется, если большинство трафика должно проксироваться).</li>
@@ -270,7 +291,7 @@ const TRANSLATIONS = {
   <li><strong>Теги</strong> — одна или несколько категорий из выбранной базы (например, <code>ru</code>, <code>private</code>, <code>category-ads-all</code>). Нажмите на поле, чтобы открыть список, воспользуйтесь поиском или введите своё значение.</li>
   <li><strong>Действие</strong> — что делать с совпавшим трафиком: <code>proxy</code>, <code>direct</code> или <code>block</code>.</li>
 </ul>
-<p>Типичная настройка: локальный и российский трафик — напрямую, рекламу — блокировать, остальное — через прокси. Добавьте правила в таком порядке и установите маршрут по умолчанию <code>proxy</code>.</p>
+<p>Типичная настройка: применить пресет <em>Россия</em> и установить маршрут по умолчанию <code>proxy</code>.</p>
 
 <h3>DNS</h3>
 <p>Раздел позволяет настроить собственный DNS-резолвер для xray-core. Если раздел отключён, используется системный DNS. Настройка DNS рекомендуется для предотвращения утечек и для направления разных доменов в разные резолверы.</p>
@@ -321,6 +342,7 @@ const TRANSLATIONS = {
         preset_iran:            'Иран',
         preset_ads:             'Блокировать рекламу',
         preset_all_proxy:       'Всё через прокси',
+        preset_bittorrent:      'Блокировать BitTorrent',
         share_btn:              'Поделиться',
         share_copied:           '✓ Ссылка скопирована',
         clear_rules_btn:        '✕ Очистить правила',

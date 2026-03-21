@@ -139,10 +139,7 @@
                         </div>
                     </div>
                     <div class="hint" style="margin-bottom:6px" data-i18n="routing_hint"></div>
-                    <label class="toggle-row">
-                        <input type="checkbox" id="block_bittorrent" name="block_bittorrent">
-                        <span class="toggle-label" data-i18n="block_bittorrent_label"></span>
-                    </label>
+                    <input type="checkbox" id="block_bittorrent" name="block_bittorrent" style="display:none">
                     <div id="routing-rules">
                         <!-- populated by JS -->
                     </div>
@@ -151,8 +148,10 @@
                             <button type="button" id="preset-btn" class="add-btn" data-i18n="preset_btn"></button>
                             <div id="preset-dropdown" class="preset-dropdown hidden"></div>
                         </div>
-                        <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
-                        <button type="button" id="clear-rules-btn" class="add-btn add-btn--clear" data-i18n="clear_rules_btn"></button>
+                        <div class="routing-btns-right">
+                            <button type="button" id="add-rule-btn" class="add-btn" data-i18n="add_rule_btn"></button>
+                            <button type="button" id="clear-rules-btn" class="add-btn add-btn--clear" data-i18n="clear_rules_btn"></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -217,7 +216,7 @@
                     <div id="dns-rules-list">
                         <!-- populated by JS -->
                     </div>
-                    <div class="routing-btns">
+                    <div class="routing-btns-right" style="margin-top:8px">
                         <button type="button" id="add-dns-rule-btn" class="add-btn" data-i18n="add_dns_rule_btn"></button>
                         <button type="button" id="clear-dns-rules-btn" class="add-btn add-btn--clear" data-i18n="clear_rules_btn"></button>
                     </div>

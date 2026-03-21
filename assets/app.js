@@ -141,6 +141,11 @@ const ROUTE_PRESETS = [
         rules: [],
         outbound: 'proxy',
     },
+    {
+        id: 'preset_bittorrent',
+        rules: [],
+        bittorrent: true,
+    },
 ];
 
 // ============================================================
@@ -1011,6 +1016,10 @@ function togglePreset(preset) {
     if (activePresets.has(preset.id)) {
         activePresets.delete(preset.id);
         rulesContainer.querySelectorAll(`[data-preset-id="${preset.id}"]`).forEach(r => r.remove());
+        if (preset.bittorrent) {
+            const cb = document.getElementById('block_bittorrent');
+            if (cb) cb.checked = false;
+        }
     } else {
         activePresets.add(preset.id);
 
@@ -1020,6 +1029,11 @@ function togglePreset(preset) {
 
         if (preset.outbound) {
             document.getElementById('default_outbound').value = preset.outbound;
+        }
+
+        if (preset.bittorrent) {
+            const cb = document.getElementById('block_bittorrent');
+            if (cb) cb.checked = true;
         }
 
         const available = new Set(databases);
@@ -1075,6 +1089,8 @@ document.addEventListener('click', (e) => {
 
 document.getElementById('clear-rules-btn')?.addEventListener('click', () => {
     rulesContainer.innerHTML = '';
+    const cb = document.getElementById('block_bittorrent');
+    if (cb) cb.checked = false;
     activePresets.clear();
     updatePresetBtn();
     saveState();

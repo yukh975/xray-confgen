@@ -145,8 +145,15 @@ body {
 
 .routing-btns {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 8px;
     margin-top: 8px;
+}
+
+.routing-btns-right {
+    display: flex;
+    gap: 8px;
 }
 
 .preset-wrap {

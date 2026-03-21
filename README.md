@@ -70,6 +70,15 @@ This section lists the geo databases available on the server. They are used when
 
 Routing determines how xray-core handles each connection — whether to send it through the proxy, route it directly, or block it entirely. If the section is disabled, all traffic goes through the proxy without any filtering.
 
+**Presets** — ready-made rule sets that can be combined. Click *Presets* and check one or more:
+- **Russia** — route local and Russian traffic directly, block ads. Sets default outbound to `proxy`.
+- **Iran** — route local and Iranian traffic directly (requires `geoip_IR.dat` / `geosite_IR.dat`).
+- **Block ads** — block domains in `category-ads-all`.
+- **All through proxy** — enable routing with default outbound `proxy`, no additional rules.
+- **Block BitTorrent** — add a protocol-level rule that blocks all BitTorrent traffic.
+
+Presets add rules without replacing existing ones. Duplicate rules are skipped. Unchecking a preset removes only the rules it added. Use *Clear rules* to reset everything at once.
+
 **Default outbound** is the action applied to traffic that does not match any rule:
 - `proxy` — send unmatched traffic through the VLESS tunnel (recommended when you want most traffic proxied).
 - `direct` — send unmatched traffic directly without the tunnel (recommended when you only want specific traffic proxied).
@@ -84,7 +93,7 @@ Routing determines how xray-core handles each connection — whether to send it 
 - **Tags** — one or more categories from the selected database (e.g. `ru`, `private`, `category-ads-all`). Click the field to open the picker, search by name, or type a custom value.
 - **Action** — what to do with matching traffic: `proxy`, `direct`, or `block`.
 
-A typical setup: route local and Russian traffic directly, block ads, and proxy everything else. Add rules in that order and set the default outbound to `proxy`.
+A typical setup: apply the *Russia* preset and set the default outbound to `proxy`.
 
 ### DNS
 
