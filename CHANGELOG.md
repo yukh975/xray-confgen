@@ -4,6 +4,16 @@
 
 # Changelog
 
+## v1.0.3 — 2026-03-21
+
+### Project
+- Project renamed from "vless-parser" to "xray-confgen" (Xray config generator)
+
+### UI
+- Page title and H1 updated to "Xray config generator"
+
+---
+
 ## v1.0.2 — 2026-03-21
 
 ### UI
