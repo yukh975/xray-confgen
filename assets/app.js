@@ -419,6 +419,11 @@ function createVlessRow({ name = '', uri = '' } = {}) {
     const nameGroup = document.createElement('div');
     nameGroup.className = 'vless-name-group';
 
+    const nameLabel = document.createElement('label');
+    nameLabel.className   = 'vless-field-label';
+    nameLabel.textContent = t('vless_name_label');
+    nameGroup.appendChild(nameLabel);
+
     const nameInput = document.createElement('input');
     nameInput.type      = 'text';
     nameInput.className = 'vless-name';
@@ -427,6 +432,11 @@ function createVlessRow({ name = '', uri = '' } = {}) {
 
     const uriGroup = document.createElement('div');
     uriGroup.className = 'vless-uri-group';
+
+    const uriLabel = document.createElement('label');
+    uriLabel.className   = 'vless-field-label';
+    uriLabel.textContent = t('vless_link_label');
+    uriGroup.appendChild(uriLabel);
 
     const uriTextarea = document.createElement('textarea');
     uriTextarea.className   = 'vless-uri';
@@ -447,6 +457,15 @@ function createVlessRow({ name = '', uri = '' } = {}) {
     });
     uriTextarea.addEventListener('input', () => {
         autoResize(uriTextarea);
+        const val = uriTextarea.value.trim();
+        const isDup = val !== '' && [...vlessList.querySelectorAll('.vless-uri')].some(
+            ta => ta !== uriTextarea && ta.value.trim() === val
+        );
+        uriTextarea.classList.toggle('input-error', isDup);
+        if (isDup) {
+            showError(t('err_vless_duplicate'));
+            return;
+        }
         saveState();
     });
     removeBtn.addEventListener('click', () => {
@@ -460,7 +479,7 @@ function createVlessRow({ name = '', uri = '' } = {}) {
     row.appendChild(uriGroup);
     row.appendChild(removeBtn);
 
-    autoResize(uriTextarea);
+    // autoResize must be called after the row is in the DOM — see call sites
     return row;
 }
 
@@ -1067,7 +1086,11 @@ function applyState(state) {
     if (vlessEntries.length === 0) {
         vlessList.appendChild(createVlessRow());
     } else {
-        vlessEntries.forEach(e => vlessList.appendChild(createVlessRow(e)));
+        vlessEntries.forEach(e => {
+            const row = createVlessRow(e);
+            vlessList.appendChild(row);
+            autoResize(row.querySelector('.vless-uri'));
+        });
     }
     updateVlessPlaceholders();
     const balancerEnabled2 = state.balancer_enabled ?? false;
@@ -1181,6 +1204,13 @@ form.addEventListener('submit', async (e) => {
 
     if (entries.length === 0) {
         showError(t('err_vless_prefix'));
+        return;
+    }
+
+    const uris = entries.map(e => e.uri.trim());
+    const hasDuplicates = uris.some((u, i) => uris.indexOf(u) !== i);
+    if (hasDuplicates) {
+        showError(t('err_vless_duplicate'));
         return;
     }
 

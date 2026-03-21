@@ -238,6 +238,7 @@ const TRANSLATIONS = {
         sniffing_dest_override_hint:  'Protocols xray-core will sniff for on inbound traffic',
         sniffing_route_only_label:    'Route only (routeOnly)',
         sniffing_route_only_hint:     'Use detected protocol for routing only, without overriding the destination address',
+        vless_name_label:             'Name',
         add_vless_btn:                '+ Add VLESS',
         balancer_enabled_label:       'Enable load balancing',
         balancer_strategy_label:      'Strategy',
@@ -247,6 +248,7 @@ const TRANSLATIONS = {
         observatory_probe_interval_label: 'Probe interval',
         observatory_probe_interval_hint:  'How often to probe each server (e.g. 10s, 1m)',
         err_no_vless:                 'At least one VLESS URI is required (must start with vless://)',
+        err_vless_duplicate:          'Duplicate VLESS URI — each entry must be unique.',
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -487,6 +489,7 @@ const TRANSLATIONS = {
         sniffing_dest_override_hint:  'Протоколы, которые xray-core будет определять во входящем трафике',
         sniffing_route_only_label:    'Только для маршрутизации (routeOnly)',
         sniffing_route_only_hint:     'Использовать определённый протокол только для маршрутизации, без подмены адреса назначения',
+        vless_name_label:             'Имя',
         add_vless_btn:                '+ Добавить VLESS',
         balancer_enabled_label:       'Включить балансировку нагрузки',
         balancer_strategy_label:      'Стратегия',
@@ -496,5 +499,6 @@ const TRANSLATIONS = {
         observatory_probe_interval_label: 'Интервал проверки',
         observatory_probe_interval_hint:  'Как часто проверять серверы (например, 10s, 1m)',
         err_no_vless:                 'Требуется хотя бы один VLESS URI (должен начинаться с vless://)',
+        err_vless_duplicate:          'Дублирующийся VLESS URI — каждая ссылка должна быть уникальной.',
     },
 };
