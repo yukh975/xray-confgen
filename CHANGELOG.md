@@ -4,6 +4,31 @@
 
 # Changelog
 
+## v1.0.3 — 2026-03-21
+
+### UI
+- Routing section is now collapsible (hidden by default); all optional sections collapsed on first load
+- Result `config.json` is displayed in a centered modal popup (same style as error dialog) with backdrop and close button
+- Value picker dropdown: added clear-all ✕ button (shown only when items are selected)
+- DNS, Routing, Logging sections now have a consistent toggle-to-expand pattern
+
+### Features
+- **DNS section** added:
+  - Enable toggle with collapsible block
+  - DNS servers list: presets (Google DoH, Cloudflare DoH, Yandex DoH, Google DNS, Cloudflare DNS, Yandex DNS) or custom with name + address fields
+  - DNS rules: assign geo-database tags to specific DNS servers (same picker as routing)
+  - Fallback DNS server, query strategy (UseIP / UseIPv4 / UseIPv6 / ForceIP / ForceIPv4 / ForceIPv6 / useSystem), domain strategy (AsIs / IPIfNonMatch / IPOnDemand)
+  - All DoH presets use IP addresses to avoid bootstrap DNS dependency
+- **Routing section**: routing config is only emitted when the section is enabled
+- Custom DNS server row includes a Name field used as label in rule selectors
+
+### Bug fixes
+- DNS rule server selector displayed literal translation key instead of server label
+- Value picker in DNS rule rows always used the initial database instead of the current selection
+- Picker dropdown was clipped by the Logging section below (`overflow: hidden` → `overflow: visible`)
+
+---
+
 ## v1.0.2 — 2026-03-20
 
 ### UI
