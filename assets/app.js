@@ -82,6 +82,7 @@ function setLang(lang) {
     dnsServers.forEach(s => dnsServersEl.appendChild(createDnsServerRow(s)));
     dnsRulesEl.innerHTML = '';
     dnsRules.forEach(r => dnsRulesEl.appendChild(createDnsRuleRow(r)));
+    updatePresetBtn();
 }
 
 document.getElementById('lang-en').addEventListener('click', () => setLang('en'));
@@ -591,13 +592,14 @@ function buildValuePicker(initDb, selectedValues = []) {
 //  Rule rows
 // ============================================================
 
-function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule_type, value } = {}) {
+function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule_type, value } = {}, presetId = null) {
     // Back-compat: support legacy single-value and rule_type fields
     if (!values.length && value) values = [value];
     if (!db && rule_type) db = rule_type === 'ip' ? 'geoip.dat' : 'geosite.dat';
 
     const row = document.createElement('div');
     row.className = 'rule-row';
+    if (presetId) row.dataset.presetId = presetId;
 
     const dbSelect = buildDbSelect(db);
 
@@ -819,6 +821,7 @@ addDnsRuleBtn.addEventListener('click', () => {
     // Apply saved or default language first, then theme
     applyLang();
     applyTheme(currentTheme);
+    updatePresetBtn();
 
     // Load available databases from server, fall back to defaults
     let serverDbs = [];
@@ -994,31 +997,62 @@ clearBtn.addEventListener('click', () => {
 const presetBtn      = document.getElementById('preset-btn');
 const presetDropdown = document.getElementById('preset-dropdown');
 
-function applyPreset(preset) {
-    const routingEnabled = document.getElementById('routing_enabled');
-    routingEnabled.checked = true;
-    routingFields.classList.remove('hidden');
+const activePresets = new Set();
 
-    const available = new Set(databases);
-    const rules = preset.rules.filter(r => available.has(r.db));
+function updatePresetBtn() {
+    if (!presetBtn) return;
+    const count = activePresets.size;
+    presetBtn.textContent = count > 0
+        ? `${t('preset_btn')} (${count})`
+        : t('preset_btn');
+}
 
-    rulesContainer.innerHTML = '';
-    rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+function togglePreset(preset) {
+    if (activePresets.has(preset.id)) {
+        activePresets.delete(preset.id);
+        rulesContainer.querySelectorAll(`[data-preset-id="${preset.id}"]`).forEach(r => r.remove());
+    } else {
+        activePresets.add(preset.id);
+
+        const routingEnabled = document.getElementById('routing_enabled');
+        routingEnabled.checked = true;
+        routingFields.classList.remove('hidden');
+
+        const available = new Set(databases);
+        const existing  = collectRules();
+
+        preset.rules
+            .filter(r => available.has(r.db))
+            .forEach(rule => {
+                const dup = existing.some(e =>
+                    e.db === rule.db &&
+                    e.action === rule.action &&
+                    JSON.stringify([...e.values].sort()) === JSON.stringify([...rule.values].sort())
+                );
+                if (!dup) rulesContainer.appendChild(createRuleRow(rule, preset.id));
+            });
+    }
+    updatePresetBtn();
     saveState();
 }
 
 function populatePresetDropdown() {
     presetDropdown.innerHTML = '';
     ROUTE_PRESETS.forEach(preset => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'preset-item';
-        item.textContent = t(preset.id);
-        item.addEventListener('click', () => {
-            applyPreset(preset);
-            presetDropdown.classList.add('hidden');
+        const label = document.createElement('label');
+        label.className = 'preset-item';
+        label.addEventListener('click', e => e.stopPropagation());
+
+        const checkbox = document.createElement('input');
+        checkbox.type    = 'checkbox';
+        checkbox.checked = activePresets.has(preset.id);
+        checkbox.addEventListener('change', () => {
+            togglePreset(preset);
         });
-        presetDropdown.appendChild(item);
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' ' + t(preset.id)));
+        presetDropdown.appendChild(label);
     });
 }
 
@@ -1030,9 +1064,21 @@ presetBtn?.addEventListener('click', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-    if (!presetBtn.contains(e.target) && !presetDropdown.contains(e.target)) {
-        presetDropdown.classList.add('hidden');
+    if (!presetBtn?.contains(e.target) && !presetDropdown?.contains(e.target)) {
+        presetDropdown?.classList.add('hidden');
     }
+});
+
+document.getElementById('clear-rules-btn')?.addEventListener('click', () => {
+    rulesContainer.innerHTML = '';
+    activePresets.clear();
+    updatePresetBtn();
+    saveState();
+});
+
+document.getElementById('clear-dns-rules-btn')?.addEventListener('click', () => {
+    dnsRulesEl.innerHTML = '';
+    saveState();
 });
 
 // ============================================================

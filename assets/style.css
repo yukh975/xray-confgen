@@ -164,26 +164,42 @@ body {
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     min-width: 180px;
     overflow: hidden;
-    animation: modal-in 0.12s ease;
+    animation: dropdown-in 0.12s ease;
 }
 
 .preset-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
-    text-align: left;
-    background: transparent;
-    border: none;
-    border-radius: 0;
+    padding: 10px 16px;
     color: var(--text);
     font-size: 13px;
     font-weight: 500;
-    padding: 10px 16px;
+    cursor: pointer;
+    user-select: none;
     transition: background 0.1s;
 }
 
 .preset-item:hover {
     background: var(--bg);
     color: var(--accent);
+}
+
+.preset-item input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.add-btn--clear {
+    color: var(--muted);
+}
+
+.add-btn--clear:hover {
+    color: var(--error);
 }
 
 /* Help modal */
@@ -1050,6 +1066,11 @@ pre#result-json {
 @keyframes modal-in {
     from { opacity: 0; transform: translate(-50%, -52%); }
     to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .error-close {

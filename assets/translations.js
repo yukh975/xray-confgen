@@ -160,6 +160,7 @@ const TRANSLATIONS = {
         preset_all_proxy:       'All through proxy',
         share_btn:              'Share',
         share_copied:           '✓ Link copied',
+        clear_rules_btn:        '✕ Clear rules',
     },
     ru: {
         subtitle:               'Генерация <code>config.json</code> для xray-core из VLESS URL',
@@ -322,5 +323,6 @@ const TRANSLATIONS = {
         preset_all_proxy:       'Всё через прокси',
         share_btn:              'Поделиться',
         share_copied:           '✓ Ссылка скопирована',
+        clear_rules_btn:        '✕ Очистить правила',
     },
 };
