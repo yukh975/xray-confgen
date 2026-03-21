@@ -28,9 +28,11 @@ function applyLang() {
         el.title = t(el.dataset.i18nTitle);
     });
 
-    // Highlight the active language button
+    // Highlight the active language button (header + help modal)
     document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
     document.getElementById('lang-ru').classList.toggle('active', currentLang === 'ru');
+    document.getElementById('help-lang-en').classList.toggle('active', currentLang === 'en');
+    document.getElementById('help-lang-ru').classList.toggle('active', currentLang === 'ru');
 }
 
 function setLang(lang) {
@@ -54,6 +56,8 @@ function setLang(lang) {
 
 document.getElementById('lang-en').addEventListener('click', () => setLang('en'));
 document.getElementById('lang-ru').addEventListener('click', () => setLang('ru'));
+document.getElementById('help-lang-en').addEventListener('click', () => setLang('en'));
+document.getElementById('help-lang-ru').addEventListener('click', () => setLang('ru'));
 
 // ============================================================
 //  Constants & defaults

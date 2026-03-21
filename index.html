@@ -260,7 +260,14 @@
         <div id="help" class="help-modal hidden">
             <div class="help-header">
                 <span data-i18n="help_title"></span>
-                <button type="button" id="help-close" class="result-close">✕</button>
+                <div class="help-header-right">
+                    <div class="lang-switcher">
+                        <button type="button" id="help-lang-en" class="lang-btn">EN</button>
+                        <span class="lang-sep">|</span>
+                        <button type="button" id="help-lang-ru" class="lang-btn">RU</button>
+                    </div>
+                    <button type="button" id="help-close" class="result-close">✕</button>
+                </div>
             </div>
             <div class="help-body" id="help-body" data-i18n-html="help_content"></div>
         </div>
