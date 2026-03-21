@@ -204,6 +204,16 @@ body {
     padding-top: 4px;
 }
 
+.copyright a {
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.copyright a:hover {
+    color: var(--text);
+}
+
 h1 {
     font-size: 26px;
     font-weight: 700;
