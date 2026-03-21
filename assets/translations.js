@@ -5,8 +5,8 @@ const TRANSLATIONS = {
         inbound_ip_hint:        'SOCKS5 address',
         inbound_port_label:     'Port',
         inbound_port_hint:      'SOCKS5 port',
-        vless_link_label:       'VLESS URL',
-        vless_link_hint:        'Full VLESS link including parameters and name',
+        vless_link_label:       'VLESS URI',
+        vless_link_hint:        'Full VLESS URI including parameters and name',
         socks5_auth_label:      'Enable SOCKS5 authentication',
         socks5_user_label:      'Username',
         socks5_pass_label:      'Password',
@@ -50,7 +50,7 @@ const TRANSLATIONS = {
         log_level_label:        'Log level',
         help_title:             'Help',
         help_content:           `
-<p>For a basic setup, just paste your <strong>VLESS URL</strong> into the corresponding field and click <strong>«Generate config.json»</strong>. That's it — the file is ready to use with xray-core.</p>
+<p>For a basic setup, just paste your <strong>VLESS URI</strong> into the corresponding field and click <strong>«Generate config.json»</strong>. That's it — the file is ready to use with xray-core.</p>
 <p>However, we recommend taking a few extra minutes to fine-tune the client configuration. The sections below cover the available options.</p>
 
 <p><strong>How Routing and DNS depend on each other:</strong></p>
@@ -71,8 +71,8 @@ const TRANSLATIONS = {
 </ul>
 <p><strong>Port</strong> is the local port the SOCKS5 proxy listens on. The default <code>10808</code> works in most cases; change it if there is a conflict with another application.</p>
 
-<h3>VLESS URL</h3>
-<p>The VLESS URL encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
+<h3>VLESS URI</h3>
+<p>The VLESS URI encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
 <ul>
   <li><strong>TCP</strong> — plain TCP transport, with or without TLS/Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket transport, typically with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -179,8 +179,8 @@ const TRANSLATIONS = {
         inbound_ip_hint:        'Адрес SOCKS5',
         inbound_port_label:     'Порт',
         inbound_port_hint:      'Порт SOCKS5',
-        vless_link_label:       'VLESS URL',
-        vless_link_hint:        'VLESS URL',
+        vless_link_label:       'VLESS URI',
+        vless_link_hint:        'VLESS URI',
         socks5_auth_label:      'Включить авторизацию SOCKS5',
         socks5_user_label:      'Имя пользователя',
         socks5_pass_label:      'Пароль',
@@ -224,7 +224,7 @@ const TRANSLATIONS = {
         log_level_label:        'Уровень журналирования',
         help_title:             'Справка',
         help_content:           `
-<p>Для базовой настройки достаточно вставить <strong>VLESS URL</strong> в соответствующее поле и нажать <strong>«Сгенерировать config.json»</strong>. Файл сразу готов к использованию с xray-core.</p>
+<p>Для базовой настройки достаточно вставить <strong>VLESS URI</strong> в соответствующее поле и нажать <strong>«Сгенерировать config.json»</strong>. Файл сразу готов к использованию с xray-core.</p>
 <p>Тем не менее мы рекомендуем уделить несколько минут более тонкой настройке клиента. Доступные параметры описаны ниже.</p>
 
 <p><strong>Как маршрутизация и DNS зависят друг от друга:</strong></p>
@@ -245,8 +245,8 @@ const TRANSLATIONS = {
 </ul>
 <p><strong>Порт</strong> — локальный порт, на котором слушает SOCKS5-прокси. Значение по умолчанию <code>10808</code> подходит в большинстве случаев; измените его при конфликте с другим приложением.</p>
 
-<h3>VLESS URL</h3>
-<p>VLESS URL содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
+<h3>VLESS URI</h3>
+<p>VLESS URI содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
 <ul>
   <li><strong>TCP</strong> — TCP-транспорт с TLS или Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket-транспорт, как правило с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
