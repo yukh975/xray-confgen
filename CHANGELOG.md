@@ -16,6 +16,12 @@
 - **Duplicate VLESS URI detection**: entering the same URI in two rows highlights the duplicate in red and shows an error immediately
 - **URI validation on submit**: each VLESS row must have a non-empty URI starting with `vless://`; invalid rows are highlighted in red and generation is blocked
 
+### Security
+- Added `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY` headers to all PHP API endpoints
+- Inline theme-init script moved to `assets/theme-init.js` to enable a strict `Content-Security-Policy: script-src 'self'` in nginx
+- Nginx config example updated: security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Content-Security-Policy`) and rate limiting (`limit_req_zone`, 20 r/s, burst 30) added
+- Reserved tag names (`direct`, `block`, `balancer`) are now rejected both in the UI (real-time, with red highlight) and in the PHP backend
+
 ### Features
 - **Multiple outbounds**: each VLESS entry becomes a separate outbound in the config; tags are derived from the Name field or auto-assigned (proxy, proxy2, …)
 - **Balancer**: when enabled, a `balancers` block is added to routing with the configured strategy; routing rules and the catch-all can target the `balancer` outbound

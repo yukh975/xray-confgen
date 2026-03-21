@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 header('Content-Type: application/json');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
 
 function err(string $msg): never {
     http_response_code(400);
@@ -114,11 +116,18 @@ echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON
 
 // ---------------------------------------------------------------------------
 
+const RESERVED_TAGS = ['direct', 'block', 'balancer'];
+
 function makeOutboundTag(string $name, int $index): string
 {
     $name = trim($name);
-    if ($name !== '') return $name;
-    return $index === 0 ? 'proxy' : 'proxy' . ($index + 1);
+    if ($name === '') {
+        return $index === 0 ? 'proxy' : 'proxy' . ($index + 1);
+    }
+    if (in_array(strtolower($name), RESERVED_TAGS, true)) {
+        err("The tag name \"$name\" is reserved (direct, block, balancer). Use a different name or leave it blank.");
+    }
+    return $name;
 }
 
 function parseVless(string $link): array

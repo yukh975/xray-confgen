@@ -164,6 +164,8 @@ const errorBox       = document.getElementById('error');
 const errorBackdrop  = document.getElementById('error-backdrop');
 const errorText      = document.getElementById('error-text');
 
+const RESERVED_TAGS  = ['direct', 'block', 'balancer'];
+
 const vlessList      = document.getElementById('vless-list');
 const dbListEl       = document.getElementById('db-list');
 const rulesContainer = document.getElementById('routing-rules');
@@ -451,6 +453,12 @@ function createVlessRow({ name = '', uri = '' } = {}) {
     removeBtn.textContent = '✕';
 
     nameInput.addEventListener('input', () => {
+        const val = nameInput.value.trim();
+        const isReserved = val !== '' && RESERVED_TAGS.includes(val.toLowerCase());
+        nameInput.classList.toggle('input-error', isReserved);
+        if (isReserved) {
+            showError(t('err_reserved_tag', val));
+        }
         updateActionSelects();
         updateVlessPlaceholders();
         saveState();
@@ -1217,6 +1225,20 @@ form.addEventListener('submit', async (e) => {
     });
     if (validationError) {
         showError(t('err_vless_prefix'));
+        return;
+    }
+
+    // Validate reserved tag names
+    let reservedTag = null;
+    vlessList.querySelectorAll('.vless-name').forEach(inp => {
+        const val = inp.value.trim();
+        if (val !== '' && RESERVED_TAGS.includes(val.toLowerCase())) {
+            inp.classList.add('input-error');
+            if (!reservedTag) reservedTag = val;
+        }
+    });
+    if (reservedTag) {
+        showError(t('err_reserved_tag', reservedTag));
         return;
     }
 

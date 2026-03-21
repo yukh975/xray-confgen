@@ -249,6 +249,7 @@ const TRANSLATIONS = {
         observatory_probe_interval_hint:  'How often to probe each server (e.g. 10s, 1m)',
         err_no_vless:                 'At least one VLESS URI is required (must start with vless://)',
         err_vless_duplicate:          'Duplicate VLESS URI — each entry must be unique.',
+        err_reserved_tag:             (name) => `The name "${name}" is reserved and cannot be used as a tag. Use a different name or leave it blank.`,
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -500,5 +501,6 @@ const TRANSLATIONS = {
         observatory_probe_interval_hint:  'Как часто проверять серверы (например, 10s, 1m)',
         err_no_vless:                 'Требуется хотя бы один VLESS URI (должен начинаться с vless://)',
         err_vless_duplicate:          'Дублирующийся VLESS URI — каждая ссылка должна быть уникальной.',
+        err_reserved_tag:             (name) => `Имя «${name}» зарезервировано и не может использоваться как тег. Используйте другое имя или оставьте поле пустым.`,
     },
 };
