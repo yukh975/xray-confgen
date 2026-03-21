@@ -21,6 +21,11 @@
 
 ### Features
 - **Import config.json** button: load an existing `config.json` back into the form — all fields (inbound, VLESS URI, routing rules, DNS, logging) are populated automatically; the configuration can then be adjusted and regenerated
+- **DNS server deduplication**: each preset can appear in the list only once; clicking *Add server* auto-selects the first unused preset; changing an existing server to a preset already in the list shows an error and reverts the selection
+- **Mobile layout**: the interface is fully responsive on smartphones — field rows stack vertically, rule rows reflow to two lines, touch targets enlarged, iOS auto-zoom prevented
+
+### Bug fixes
+- Tag picker showed stale tags after switching databases: a race condition caused a completed `fetchTags()` call to overwrite `knownTags` after `resetPicker()` had already run; fixed with a sequence counter that invalidates in-flight fetches
 
 ---
 

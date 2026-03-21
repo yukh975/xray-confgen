@@ -114,6 +114,8 @@ This section lets you configure a custom DNS resolver for xray-core. When disabl
 - A **preset** — Google DoH, Cloudflare DoH, Yandex DoH (all use IP addresses to avoid bootstrap dependency), or their plain DNS counterparts.
 - A **custom** server — enter a name (used as a label in rules) and an address: a plain IP (`8.8.8.8`) or a DoH URL (`https://1.1.1.1/dns-query`).
 
+Each preset can appear in the list only once. When you click *Add server*, the first preset not yet in the list is selected automatically. Changing an existing server to a preset already present shows an error and reverts the selection.
+
 **DNS rules** work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all `ru` domains to Yandex DNS and resolve everything else via Cloudflare DoH.
 
 ### Import config.json

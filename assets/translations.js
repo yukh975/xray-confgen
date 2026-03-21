@@ -140,6 +140,7 @@ const TRANSLATIONS = {
   <li>A <strong>preset</strong> — Google DoH, Cloudflare DoH, Yandex DoH (all use IP addresses to avoid bootstrap dependency), or their plain DNS counterparts.</li>
   <li>A <strong>custom</strong> server — enter a name (used as a label in rules) and an address: a plain IP (<code>8.8.8.8</code>) or a DoH URL (<code>https://1.1.1.1/dns-query</code>).</li>
 </ul>
+<p>Each preset can appear in the list only once. When you click <em>Add server</em>, the first preset not yet in the list is selected automatically. Changing an existing server to a preset already present shows an error and reverts the selection.</p>
 
 <p><strong>DNS rules</strong> work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all <code>ru</code> domains to Yandex DNS and resolve everything else via Cloudflare DoH.</p>
 
@@ -324,6 +325,7 @@ const TRANSLATIONS = {
   <li><strong>Пресетом</strong> — Google DoH, Cloudflare DoH, Yandex DoH (все используют IP-адреса, чтобы не зависеть от начального резолвера) или их обычные DNS-аналоги.</li>
   <li><strong>Кастомным</strong> — укажите имя (используется как метка в правилах) и адрес: обычный IP (<code>8.8.8.8</code>) или DoH URL (<code>https://1.1.1.1/dns-query</code>).</li>
 </ul>
+<p>Каждый пресет можно добавить только один раз. При нажатии <em>Добавить сервер</em> автоматически выбирается первый незанятый пресет. При попытке вручную выбрать пресет, который уже есть в списке, выводится ошибка и выбор возвращается к предыдущему значению.</p>
 
 <p><strong>Правила DNS</strong> работают так же, как правила маршрутизации, но вместо действия указывают на один из настроенных DNS-серверов. Каждое правило состоит из базы данных, одного или нескольких тегов и целевого сервера. Например, можно отправлять все домены зоны <code>ru</code> на Yandex DNS, а всё остальное резолвить через Cloudflare DoH.</p>
 
