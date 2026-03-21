@@ -271,6 +271,39 @@
                 </div>
             </div>
 
+            <!-- Mux -->
+            <div class="section-title">Mux</div>
+
+            <div class="field-group">
+                <label class="toggle-row">
+                    <input type="checkbox" id="mux_enabled" name="mux_enabled">
+                    <span class="toggle-label" data-i18n="mux_enabled_label"></span>
+                </label>
+                <div id="mux-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px">
+                        <div class="field-group">
+                            <label for="mux_concurrency" data-i18n="mux_concurrency_label"></label>
+                            <input type="number" id="mux_concurrency" value="8" min="-1" max="1024">
+                            <span class="hint" data-i18n="mux_concurrency_hint"></span>
+                        </div>
+                        <div class="field-group">
+                            <label for="mux_xudp_concurrency" data-i18n="mux_xudp_concurrency_label"></label>
+                            <input type="number" id="mux_xudp_concurrency" value="8" min="-1" max="1024">
+                            <span class="hint" data-i18n="mux_xudp_concurrency_hint"></span>
+                        </div>
+                        <div class="field-group">
+                            <label for="mux_xudp_proxy_udp443" data-i18n="mux_xudp_proxy_udp443_label"></label>
+                            <select id="mux_xudp_proxy_udp443">
+                                <option value="reject">reject</option>
+                                <option value="allow">allow</option>
+                                <option value="skip">skip</option>
+                            </select>
+                            <span class="hint" data-i18n="mux_xudp_proxy_udp443_hint"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Logging -->
             <div class="section-title">Logging</div>
 

@@ -132,6 +132,23 @@ Each preset can appear in the list only once. When you click *Add server*, the f
 
 **DNS rules** work the same way as routing rules, but instead of an action they point to one of the configured DNS servers. Each rule consists of a database, one or more tags, and the target server. For example, you can send all `ru` domains to Yandex DNS and resolve everything else via Cloudflare DoH.
 
+### Mux
+
+Mux (multiplexing) packs multiple logical streams into a single physical TCP connection to the server. Instead of opening a new connection for every request — each with its own TLS handshake — xray-core reuses one connection, reducing latency for short, frequent requests (browser tabs, API calls).
+
+Mux is most effective on high-latency connections. For large file transfers or streaming it may hurt performance due to head-of-line blocking. Disabled by default.
+
+> **⚠ Incompatible with Reality + XTLS flow.** If your VLESS URI uses Reality security with `flow=xtls-rprx-vision`, the Mux setting is silently ignored — no `mux` block is written to the config.
+
+**Concurrency** — the maximum number of concurrent TCP streams per connection. Default: 8.
+
+**XUDP concurrency** — the same limit for UDP streams (XUDP protocol). Default: 8.
+
+**UDP/443 (QUIC)** — how to handle QUIC traffic:
+- `reject` — block QUIC; the client falls back to TCP/TLS. Recommended in most cases.
+- `allow` — proxy QUIC through the tunnel.
+- `skip` — let QUIC pass directly without the tunnel.
+
 ### Import config.json
 
 The **Import config.json** button lets you load an existing `config.json` file back into the form. Click the button and select the file — all fields (inbound, VLESS URI, routing rules, DNS configuration, and logging settings) are populated automatically. You can then adjust the configuration and regenerate an updated `config.json`.

@@ -212,6 +212,10 @@ function saveState() {
         dns_fallback_custom:  dnsFallbackCustom.value,
         dns_servers:          collectDnsServers(),
         dns_rules:            collectDnsRules(),
+        mux_enabled:            document.getElementById('mux_enabled').checked,
+        mux_concurrency:        document.getElementById('mux_concurrency').value,
+        mux_xudp_concurrency:   document.getElementById('mux_xudp_concurrency').value,
+        mux_xudp_proxy_udp443:  document.getElementById('mux_xudp_proxy_udp443').value,
         log_enabled:       document.getElementById('log_enabled').checked,
         log_dir:           document.getElementById('log_dir').value,
         log_level:         document.getElementById('log_level').value,
@@ -257,6 +261,14 @@ function getFallbackValue() {
         ? dnsFallbackCustom.value.trim()
         : dnsFallbackPreset.value;
 }
+
+// Toggle Mux fields visibility
+const muxEnabledCheckbox = document.getElementById('mux_enabled');
+const muxFields          = document.getElementById('mux-fields');
+
+muxEnabledCheckbox.addEventListener('change', () => {
+    muxFields.classList.toggle('hidden', !muxEnabledCheckbox.checked);
+});
 
 // Toggle sniffing fields visibility
 const sniffingEnabledCheckbox = document.getElementById('sniffing_enabled');
@@ -923,6 +935,11 @@ function applyState(state) {
     if (Array.isArray(state.dns_rules)) {
         state.dns_rules.forEach(r => dnsRulesEl.appendChild(createDnsRuleRow(r)));
     }
+    document.getElementById('mux_enabled').checked           = state.mux_enabled           ?? false;
+    document.getElementById('mux_concurrency').value         = state.mux_concurrency        ?? 8;
+    document.getElementById('mux_xudp_concurrency').value    = state.mux_xudp_concurrency   ?? 8;
+    document.getElementById('mux_xudp_proxy_udp443').value   = state.mux_xudp_proxy_udp443  ?? 'reject';
+    muxFields.classList.toggle('hidden', !(state.mux_enabled ?? false));
     document.getElementById('log_enabled').checked = state.log_enabled ?? false;
     document.getElementById('log_dir').value        = state.log_dir    ?? '';
     document.getElementById('log_level').value      = state.log_level  ?? 'warning';
@@ -1030,6 +1047,10 @@ form.addEventListener('submit', async (e) => {
                 dns_fallback:         getFallbackValue(),
                 dns_servers:          collectDnsServers(),
                 dns_rules:            collectDnsRules(),
+                mux_enabled:            document.getElementById('mux_enabled').checked,
+                mux_concurrency:        parseInt(document.getElementById('mux_concurrency').value, 10),
+                mux_xudp_concurrency:   parseInt(document.getElementById('mux_xudp_concurrency').value, 10),
+                mux_xudp_proxy_udp443:  document.getElementById('mux_xudp_proxy_udp443').value,
                 log_enabled:       document.getElementById('log_enabled').checked,
                 log_dir:           document.getElementById('log_dir').value.trim(),
                 log_level:         document.getElementById('log_level').value,
@@ -1088,6 +1109,11 @@ clearBtn.addEventListener('click', () => {
     dnsFields.classList.add('hidden');
     dnsServersEl.innerHTML = '';
     dnsRulesEl.innerHTML   = '';
+    document.getElementById('mux_enabled').checked          = false;
+    document.getElementById('mux_concurrency').value        = '8';
+    document.getElementById('mux_xudp_concurrency').value   = '8';
+    document.getElementById('mux_xudp_proxy_udp443').value  = 'reject';
+    muxFields.classList.add('hidden');
     document.getElementById('log_enabled').checked      = false;
     document.getElementById('log_dir').value            = '';
     document.getElementById('log_level').value          = 'warning';
@@ -1252,6 +1278,10 @@ function getShareUrl() {
         dns_fallback_custom: dnsFallbackCustom.value,
         dns_servers:         collectDnsServers(),
         dns_rules:           collectDnsRules(),
+        mux_enabled:           document.getElementById('mux_enabled').checked,
+        mux_concurrency:       document.getElementById('mux_concurrency').value,
+        mux_xudp_concurrency:  document.getElementById('mux_xudp_concurrency').value,
+        mux_xudp_proxy_udp443: document.getElementById('mux_xudp_proxy_udp443').value,
         log_enabled:         document.getElementById('log_enabled').checked,
         log_dir:             document.getElementById('log_dir').value,
         log_level:           document.getElementById('log_level').value,
@@ -1526,6 +1556,20 @@ function parseConfigJson(config) {
         state.log_enabled = false;
         state.log_level   = 'warning';
         state.log_dir     = '';
+    }
+
+    // --- Mux ---
+    const mux = (config.outbounds ?? []).find(o => o.protocol === 'vless')?.mux;
+    if (mux?.enabled) {
+        state.mux_enabled           = true;
+        state.mux_concurrency       = mux.concurrency       ?? 8;
+        state.mux_xudp_concurrency  = mux.xudpConcurrency   ?? 8;
+        state.mux_xudp_proxy_udp443 = mux.xudpProxyUDP443   ?? 'reject';
+    } else {
+        state.mux_enabled           = false;
+        state.mux_concurrency       = 8;
+        state.mux_xudp_concurrency  = 8;
+        state.mux_xudp_proxy_udp443 = 'reject';
     }
 
     return state;

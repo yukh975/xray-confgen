@@ -45,6 +45,11 @@ $logLevel        = in_array($in['log_level'] ?? '', ['debug', 'info', 'warning',
 $httpInboundEnabled = (bool)($in['http_inbound_enabled'] ?? false);
 $httpInboundIp      = trim((string)($in['http_inbound_ip']   ?? '127.0.0.1'));
 $httpInboundPort    = (int)($in['http_inbound_port']          ?? 8080);
+$muxEnabled           = (bool)($in['mux_enabled'] ?? false);
+$muxConcurrency       = (int)($in['mux_concurrency'] ?? 8);
+$muxXudpConcurrency   = (int)($in['mux_xudp_concurrency'] ?? 8);
+$muxXudpProxyUDP443   = in_array($in['mux_xudp_proxy_udp443'] ?? '', ['reject', 'allow', 'skip'], true)
+    ? $in['mux_xudp_proxy_udp443'] : 'reject';
 $sniffingEnabled      = (bool)($in['sniffing_enabled'] ?? true);
 $sniffingDestOverride = is_array($in['sniffing_dest_override'] ?? null)
     ? array_values(array_filter(array_map('strval', $in['sniffing_dest_override']), fn($v) => in_array($v, ['http', 'tls', 'quic', 'bittorrent'], true)))
@@ -72,7 +77,7 @@ if ($httpInboundEnabled) {
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly, $httpInboundEnabled, $httpInboundIp, $httpInboundPort);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly, $httpInboundEnabled, $httpInboundIp, $httpInboundPort, $muxEnabled, $muxConcurrency, $muxXudpConcurrency, $muxXudpProxyUDP443);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -170,7 +175,7 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false, bool $httpInboundEnabled = false, string $httpInboundIp = '127.0.0.1', int $httpInboundPort = 8080): array
+function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false, bool $httpInboundEnabled = false, string $httpInboundIp = '127.0.0.1', int $httpInboundPort = 8080, bool $muxEnabled = false, int $muxConcurrency = 8, int $muxXudpConcurrency = 8, string $muxXudpProxyUDP443 = 'reject'): array
 {
     $socksSettings = ['auth' => 'noauth', 'udp' => true];
     if ($socks5Auth && $socks5User !== '') {
@@ -216,6 +221,17 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
 
     if ($v['name'] !== '') {
         $outbound['_comment'] = $v['name'];
+    }
+
+    // Mux is incompatible with Reality + XTLS flow — silently skip if that combination is used
+    $isRealityFlow = $v['security'] === 'reality' && $v['flow'] !== '';
+    if ($muxEnabled && !$isRealityFlow) {
+        $outbound['mux'] = [
+            'enabled'         => true,
+            'concurrency'     => $muxConcurrency,
+            'xudpConcurrency' => $muxXudpConcurrency,
+            'xudpProxyUDP443' => $muxXudpProxyUDP443,
+        ];
     }
 
     if ($logEnabled && $logDir !== '') {

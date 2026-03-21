@@ -20,6 +20,7 @@
 - "VLESS URL" renamed to "VLESS URI" everywhere: field label, subtitle, help content
 
 ### Features
+- **Mux section** added between DNS and Logging: enable toggle (default: off), `concurrency`, `xudpConcurrency`, `xudpProxyUDP443`; automatically skipped when Reality + `xtls-rprx-vision` flow is used
 - **HTTP inbound**: button in the Inbound section adds an HTTP proxy inbound (`127.0.0.1:8080` by default); IP and port are configurable; clicking ✕ removes it; only one HTTP inbound is allowed
 - **Sniffing section** added between VLESS and Databases: enable toggle (default: on), protocol checkboxes (`http`, `tls`, `quic`, `bittorrent`), and `routeOnly` option; sniffing config is only emitted when the section is enabled
 - **Import config.json** button: load an existing `config.json` back into the form — all fields (inbound, VLESS URI, routing rules, DNS, logging) are populated automatically; the configuration can then be adjusted and regenerated
