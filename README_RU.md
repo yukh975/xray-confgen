@@ -4,9 +4,9 @@
 
 <img src="assets/logo.svg" width="48" height="48" align="left" style="margin-right: 14px">
 
-# Xray config generator v1.0.3
+# Xray config generator v1.0.2
 
-[![Version](https://img.shields.io/badge/release-v1.0.3-blue)](https://github.com/yukh975/xray-confgen/releases)
+[![Version](https://img.shields.io/badge/release-v1.0.2-blue)](https://github.com/yukh975/xray-confgen/releases)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
 [![Nginx](https://img.shields.io/badge/web-Nginx%20%2B%20PHP--FPM-009639)](https://nginx.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
