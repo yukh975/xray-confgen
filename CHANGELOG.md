@@ -4,7 +4,7 @@
 
 # Changelog
 
-## v1.0.3 — unreleased
+## v1.0.3 — 2026-03-21
 
 ### UI
 - Dark/light theme toggle button (sun/moon icon) in the header; dark theme is the default
