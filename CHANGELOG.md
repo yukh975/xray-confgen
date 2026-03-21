@@ -4,16 +4,6 @@
 
 # Changelog
 
-## v1.0.3 — 2026-03-21
-
-### Project
-- Project renamed from "vless-parser" to "xray-confgen" (Xray config generator)
-
-### UI
-- Page title and H1 updated to "Xray config generator"
-
----
-
 ## v1.0.2 — 2026-03-21
 
 ### UI
@@ -23,7 +13,8 @@
 - Field labels simplified: removed redundant "Inbound" from IP and port labels
 - Field labels horizontally aligned with input fields
 - Hint texts simplified
-- Page title and H1 updated: "VLESS URL → xray-core config.json"
+- Page title and H1 updated to "Xray config generator"
+- Project renamed from "vless-parser" to "xray-confgen" (Xray config generator)
 - Routing section is now collapsible (hidden by default); all optional sections collapsed on first load
 - Result `config.json` is displayed in a centered modal popup (same style as error dialog) with backdrop and close button
 - Result config modal closes only via the ✕ button; backdrop click and Escape do not close it
