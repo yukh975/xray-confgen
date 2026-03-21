@@ -420,6 +420,12 @@ button.secondary:hover {
     flex: 0 0 160px;
 }
 
+#dns-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 #add-dns-server-btn,
 #add-dns-rule-btn {
     align-self: flex-end;
