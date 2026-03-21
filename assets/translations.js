@@ -1,6 +1,6 @@
 const TRANSLATIONS = {
     en: {
-        subtitle:               'Generate <code>config.json</code> for xray-core from a VLESS link',
+        subtitle:               'Generate <code>config.json</code> for xray-core from a VLESS URI',
         inbound_ip_label:       'IP address',
         inbound_ip_hint:        'SOCKS5 address',
         inbound_port_label:     'Port',
@@ -163,7 +163,7 @@ const TRANSLATIONS = {
         clear_rules_btn:        '✕ Clear rules',
     },
     ru: {
-        subtitle:               'Генерация <code>config.json</code> для xray-core из VLESS URL',
+        subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
         inbound_ip_label:       'IP-адрес',
         inbound_ip_hint:        'Адрес SOCKS5',
         inbound_port_label:     'Порт',
