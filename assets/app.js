@@ -1,4 +1,32 @@
 // ============================================================
+//  Theme
+// ============================================================
+
+const LS_THEME = 'xray_theme';
+const ICON_SUN  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+const ICON_MOON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+let currentTheme = localStorage.getItem(LS_THEME) || 'dark';
+
+function applyTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(LS_THEME, theme);
+    const btn = document.getElementById('theme-btn');
+    if (theme === 'dark') {
+        btn.innerHTML = ICON_SUN;
+        btn.title = t('theme_to_light');
+    } else {
+        btn.innerHTML = ICON_MOON;
+        btn.title = t('theme_to_dark');
+    }
+}
+
+document.getElementById('theme-btn').addEventListener('click', () => {
+    applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+});
+
+// ============================================================
 //  Language state
 // ============================================================
 
@@ -79,6 +107,36 @@ const DEFAULT_RULES = [
     { db: 'geosite.dat', values: ['ru'],               action: 'direct' },
     { db: 'geoip.dat',   values: ['ru'],               action: 'direct' },
     { db: 'geosite.dat', values: ['category-ads-all'], action: 'block'  },
+];
+
+const ROUTE_PRESETS = [
+    {
+        id: 'preset_russia',
+        rules: [
+            { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
+            { db: 'geosite.dat', values: ['ru'],               action: 'direct' },
+            { db: 'geoip.dat',   values: ['ru'],               action: 'direct' },
+            { db: 'geosite.dat', values: ['category-ads-all'], action: 'block'  },
+        ],
+    },
+    {
+        id: 'preset_iran',
+        rules: [
+            { db: 'geoip.dat',      values: ['private'], action: 'direct' },
+            { db: 'geosite_IR.dat', values: ['ir'],      action: 'direct' },
+            { db: 'geoip_IR.dat',   values: ['ir'],      action: 'direct' },
+        ],
+    },
+    {
+        id: 'preset_ads',
+        rules: [
+            { db: 'geosite.dat', values: ['category-ads-all'], action: 'block' },
+        ],
+    },
+    {
+        id: 'preset_all_proxy',
+        rules: [],
+    },
 ];
 
 // ============================================================
@@ -756,8 +814,9 @@ addDnsRuleBtn.addEventListener('click', () => {
 // ============================================================
 
 (async function init() {
-    // Apply saved or default language first
+    // Apply saved or default language first, then theme
     applyLang();
+    applyTheme(currentTheme);
 
     // Load available databases from server, fall back to defaults
     let serverDbs = [];
@@ -771,7 +830,19 @@ addDnsRuleBtn.addEventListener('click', () => {
         serverDbs = [...DEFAULT_DATABASES];
     }
 
-    const state = loadState();
+    // Restore from share URL if present, otherwise from localStorage
+    const urlParam = new URLSearchParams(location.search).get('s');
+    let state;
+    if (urlParam) {
+        try {
+            state = decodeShare(urlParam);
+            history.replaceState(null, '', location.pathname);
+        } catch {
+            state = loadState();
+        }
+    } else {
+        state = loadState();
+    }
 
     databases = serverDbs;
     renderDatabases();
@@ -912,6 +983,111 @@ clearBtn.addEventListener('click', () => {
     loadDefaultRules();
     hideAll();
     localStorage.removeItem(LS_KEY);
+});
+
+// ============================================================
+//  Presets
+// ============================================================
+
+const presetBtn      = document.getElementById('preset-btn');
+const presetDropdown = document.getElementById('preset-dropdown');
+
+function applyPreset(preset) {
+    const routingEnabled = document.getElementById('routing_enabled');
+    routingEnabled.checked = true;
+    routingFields.classList.remove('hidden');
+
+    const available = new Set(databases);
+    const rules = preset.rules.filter(r => available.has(r.db));
+
+    rulesContainer.innerHTML = '';
+    rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    saveState();
+}
+
+function populatePresetDropdown() {
+    presetDropdown.innerHTML = '';
+    ROUTE_PRESETS.forEach(preset => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'preset-item';
+        item.textContent = t(preset.id);
+        item.addEventListener('click', () => {
+            applyPreset(preset);
+            presetDropdown.classList.add('hidden');
+        });
+        presetDropdown.appendChild(item);
+    });
+}
+
+presetBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const opening = presetDropdown.classList.contains('hidden');
+    if (opening) populatePresetDropdown();
+    presetDropdown.classList.toggle('hidden', !opening);
+});
+
+document.addEventListener('click', (e) => {
+    if (!presetBtn.contains(e.target) && !presetDropdown.contains(e.target)) {
+        presetDropdown.classList.add('hidden');
+    }
+});
+
+// ============================================================
+//  Share
+// ============================================================
+
+function encodeShare(state) {
+    const json  = JSON.stringify(state);
+    const bytes = new TextEncoder().encode(json);
+    let binary  = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function decodeShare(str) {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (str.length % 4) str += '=';
+    const binary = atob(str);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function getShareUrl() {
+    const state = {
+        inbound_ip:          document.getElementById('inbound_ip').value,
+        inbound_port:        document.getElementById('inbound_port').value,
+        socks5_auth:         document.getElementById('socks5_auth').checked,
+        socks5_user:         document.getElementById('socks5_user').value,
+        socks5_pass:         document.getElementById('socks5_pass').value,
+        vless_link:          document.getElementById('vless_link').value,
+        routing_enabled:     document.getElementById('routing_enabled').checked,
+        block_bittorrent:    document.getElementById('block_bittorrent').checked,
+        default_outbound:    document.getElementById('default_outbound').value,
+        domain_strategy:     document.getElementById('domain_strategy').value,
+        dns_enabled:         document.getElementById('dns_enabled').checked,
+        dns_query_strategy:  document.getElementById('dns_query_strategy').value,
+        dns_domain_strategy: document.getElementById('dns_domain_strategy').value,
+        dns_fallback_preset: dnsFallbackPreset.value,
+        dns_fallback_custom: dnsFallbackCustom.value,
+        dns_servers:         collectDnsServers(),
+        dns_rules:           collectDnsRules(),
+        log_enabled:         document.getElementById('log_enabled').checked,
+        log_dir:             document.getElementById('log_dir').value,
+        log_level:           document.getElementById('log_level').value,
+        rules:               collectRules(),
+    };
+    return `${location.origin}${location.pathname}?s=${encodeShare(state)}`;
+}
+
+const shareBtn = document.getElementById('share-btn');
+
+shareBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(getShareUrl()).then(() => {
+        shareBtn.textContent = t('share_copied');
+        setTimeout(() => { shareBtn.textContent = t('share_btn'); }, 2000);
+    });
 });
 
 // ============================================================
