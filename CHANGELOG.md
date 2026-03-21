@@ -20,6 +20,7 @@
 - "VLESS URL" renamed to "VLESS URI" everywhere: field label, subtitle, help content
 
 ### Features
+- **HTTP inbound**: button in the Inbound section adds an HTTP proxy inbound (`127.0.0.1:8080` by default); IP and port are configurable; clicking ✕ removes it; only one HTTP inbound is allowed
 - **Sniffing section** added between VLESS and Databases: enable toggle (default: on), protocol checkboxes (`http`, `tls`, `quic`, `bittorrent`), and `routeOnly` option; sniffing config is only emitted when the section is enabled
 - **Import config.json** button: load an existing `config.json` back into the form — all fields (inbound, VLESS URI, routing rules, DNS, logging) are populated automatically; the configuration can then be adjusted and regenerated
 - **DNS server deduplication**: each preset can appear in the list only once; clicking *Add server* auto-selects the first unused preset; changing an existing server to a preset already in the list shows an error and reverts the selection

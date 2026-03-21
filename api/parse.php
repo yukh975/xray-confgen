@@ -42,6 +42,9 @@ $logEnabled      = (bool)($in['log_enabled'] ?? false);
 $logDir          = trim((string)($in['log_dir'] ?? ''));
 $logLevel        = in_array($in['log_level'] ?? '', ['debug', 'info', 'warning', 'error', 'none'], true)
     ? $in['log_level'] : 'warning';
+$httpInboundEnabled = (bool)($in['http_inbound_enabled'] ?? false);
+$httpInboundIp      = trim((string)($in['http_inbound_ip']   ?? '127.0.0.1'));
+$httpInboundPort    = (int)($in['http_inbound_port']          ?? 8080);
 $sniffingEnabled      = (bool)($in['sniffing_enabled'] ?? true);
 $sniffingDestOverride = is_array($in['sniffing_dest_override'] ?? null)
     ? array_values(array_filter(array_map('strval', $in['sniffing_dest_override']), fn($v) => in_array($v, ['http', 'tls', 'quic', 'bittorrent'], true)))
@@ -57,11 +60,19 @@ if ($inboundPort < 1 || $inboundPort > 65535) {
 if (!str_starts_with($vlessLink, 'vless://')) {
     err('Link must start with vless://');
 }
+if ($httpInboundEnabled) {
+    if (filter_var($httpInboundIp, FILTER_VALIDATE_IP) === false) {
+        err('Invalid HTTP inbound IP address');
+    }
+    if ($httpInboundPort < 1 || $httpInboundPort > 65535) {
+        err('HTTP inbound port must be in range 1–65535');
+    }
+}
 
 // --- Parse & build ---------------------------------------------------------
 
 $parsed = parseVless($vlessLink);
-$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly);
+$config = buildConfig($inboundIp, $inboundPort, $parsed, $routingEnabled, $routingRules, $blockBittorrent, $socks5Auth, $socks5User, $socks5Pass, $defaultOutbound, $domainStrategy, $logEnabled, $logDir, $logLevel, $dnsEnabled, $dnsQueryStrategy, $dnsDomainStrategy, $dnsFallback, $dnsServers, $dnsRules, $sniffingEnabled, $sniffingDestOverride, $sniffingRouteOnly, $httpInboundEnabled, $httpInboundIp, $httpInboundPort);
 
 echo json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
@@ -159,7 +170,7 @@ function parseSecurity(string $security, array $q, string $remoteHost): array
 
 // ---------------------------------------------------------------------------
 
-function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false): array
+function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = false, array $routingRules = [], bool $blockBittorrent = false, bool $socks5Auth = false, string $socks5User = '', string $socks5Pass = '', string $defaultOutbound = 'proxy', string $domainStrategy = 'IPIfNonMatch', bool $logEnabled = false, string $logDir = '', string $logLevel = 'warning', bool $dnsEnabled = false, string $dnsQueryStrategy = 'UseIPv4', string $dnsDomainStrategy = 'IPIfNonMatch', string $dnsFallback = '', array $dnsServers = [], array $dnsRules = [], bool $sniffingEnabled = true, array $sniffingDestOverride = ['http', 'tls'], bool $sniffingRouteOnly = false, bool $httpInboundEnabled = false, string $httpInboundIp = '127.0.0.1', int $httpInboundPort = 8080): array
 {
     $socksSettings = ['auth' => 'noauth', 'udp' => true];
     if ($socks5Auth && $socks5User !== '') {
@@ -216,9 +227,19 @@ function buildConfig(string $ip, int $port, array $v, bool $routingEnabled = fal
         $log = ['loglevel' => 'none'];
     }
 
+    $inbounds = [$inbound];
+    if ($httpInboundEnabled) {
+        $inbounds[] = [
+            'tag'      => 'http-in',
+            'listen'   => $httpInboundIp,
+            'port'     => $httpInboundPort,
+            'protocol' => 'http',
+        ];
+    }
+
     $config = [
         'log'       => $log,
-        'inbounds'  => [$inbound],
+        'inbounds'  => $inbounds,
         'outbounds' => [
             $outbound,
             ['tag' => 'direct', 'protocol' => 'freedom'],

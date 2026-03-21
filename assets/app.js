@@ -188,6 +188,9 @@ function saveState() {
     const state = {
         inbound_ip:       document.getElementById('inbound_ip').value,
         inbound_port:     document.getElementById('inbound_port').value,
+        http_inbound_enabled: !httpInboundRow.classList.contains('hidden'),
+        http_inbound_ip:      document.getElementById('http_inbound_ip').value,
+        http_inbound_port:    document.getElementById('http_inbound_port').value,
         socks5_auth:       document.getElementById('socks5_auth').checked,
         socks5_user:       document.getElementById('socks5_user').value,
         socks5_pass:       document.getElementById('socks5_pass').value,
@@ -276,6 +279,23 @@ const dnsFields          = document.getElementById('dns-fields');
 
 dnsEnabledCheckbox.addEventListener('change', () => {
     dnsFields.classList.toggle('hidden', !dnsEnabledCheckbox.checked);
+});
+
+// HTTP inbound add / remove
+const httpInboundRow       = document.getElementById('http-inbound-row');
+const addHttpInboundBtn    = document.getElementById('add-http-inbound-btn');
+const removeHttpInboundBtn = document.getElementById('remove-http-inbound-btn');
+
+addHttpInboundBtn.addEventListener('click', () => {
+    httpInboundRow.classList.remove('hidden');
+    addHttpInboundBtn.classList.add('hidden');
+    saveState();
+});
+
+removeHttpInboundBtn.addEventListener('click', () => {
+    httpInboundRow.classList.add('hidden');
+    addHttpInboundBtn.classList.remove('hidden');
+    saveState();
 });
 
 // Toggle SOCKS5 auth fields visibility
@@ -866,6 +886,11 @@ addDnsRuleBtn.addEventListener('click', () => {
 function applyState(state) {
     document.getElementById('inbound_ip').value          = state.inbound_ip       ?? '0.0.0.0';
     document.getElementById('inbound_port').value        = state.inbound_port     ?? '10808';
+    const httpEnabled = state.http_inbound_enabled ?? false;
+    document.getElementById('http_inbound_ip').value   = state.http_inbound_ip   ?? '127.0.0.1';
+    document.getElementById('http_inbound_port').value = state.http_inbound_port ?? '8080';
+    httpInboundRow.classList.toggle('hidden', !httpEnabled);
+    addHttpInboundBtn.classList.toggle('hidden', httpEnabled);
     document.getElementById('socks5_auth').checked       = state.socks5_auth      ?? false;
     document.getElementById('socks5_user').value         = state.socks5_user      ?? '';
     document.getElementById('socks5_pass').value         = state.socks5_pass      ?? '';
@@ -980,6 +1005,9 @@ form.addEventListener('submit', async (e) => {
             body: JSON.stringify({
                 inbound_ip:       ip,
                 inbound_port:     port,
+                http_inbound_enabled: !httpInboundRow.classList.contains('hidden'),
+                http_inbound_ip:      document.getElementById('http_inbound_ip').value.trim(),
+                http_inbound_port:    parseInt(document.getElementById('http_inbound_port').value, 10),
                 socks5_auth:      document.getElementById('socks5_auth').checked,
                 socks5_user:      document.getElementById('socks5_user').value.trim(),
                 socks5_pass:      document.getElementById('socks5_pass').value,
@@ -1031,6 +1059,10 @@ clearBtn.addEventListener('click', () => {
     form.reset();
     document.getElementById('inbound_ip').value         = '0.0.0.0';
     document.getElementById('inbound_port').value       = '10808';
+    httpInboundRow.classList.add('hidden');
+    document.getElementById('http_inbound_ip').value   = '127.0.0.1';
+    document.getElementById('http_inbound_port').value = '8080';
+    addHttpInboundBtn.classList.remove('hidden');
     document.getElementById('socks5_auth').checked      = false;
     document.getElementById('socks5_user').value        = '';
     document.getElementById('socks5_pass').value        = '';
@@ -1196,6 +1228,9 @@ function getShareUrl() {
     const state = {
         inbound_ip:          document.getElementById('inbound_ip').value,
         inbound_port:        document.getElementById('inbound_port').value,
+        http_inbound_enabled: !httpInboundRow.classList.contains('hidden'),
+        http_inbound_ip:      document.getElementById('http_inbound_ip').value,
+        http_inbound_port:    document.getElementById('http_inbound_port').value,
         socks5_auth:         document.getElementById('socks5_auth').checked,
         socks5_user:         document.getElementById('socks5_user').value,
         socks5_pass:         document.getElementById('socks5_pass').value,
@@ -1256,6 +1291,18 @@ function parseConfigJson(config) {
         state.socks5_auth  = false;
         state.socks5_user  = '';
         state.socks5_pass  = '';
+    }
+
+    // --- HTTP inbound ---
+    const httpIn = (config.inbounds ?? []).find(i => i.protocol === 'http');
+    if (httpIn) {
+        state.http_inbound_enabled = true;
+        state.http_inbound_ip      = httpIn.listen ?? '127.0.0.1';
+        state.http_inbound_port    = String(httpIn.port ?? 8080);
+    } else {
+        state.http_inbound_enabled = false;
+        state.http_inbound_ip      = '127.0.0.1';
+        state.http_inbound_port    = '8080';
     }
 
     // --- Sniffing ---
