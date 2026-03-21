@@ -821,7 +821,6 @@ addDnsRuleBtn.addEventListener('click', () => {
     // Apply saved or default language first, then theme
     applyLang();
     applyTheme(currentTheme);
-    updatePresetBtn();
 
     // Load available databases from server, fall back to defaults
     let serverDbs = [];
