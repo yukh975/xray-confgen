@@ -50,7 +50,7 @@ const TRANSLATIONS = {
         log_level_label:        'Log level',
         help_title:             'Help',
         help_content:           `
-<p>For a basic setup, just paste your <strong>VLESS URL</strong> into the corresponding field and click <strong>Generate config.json</strong>. That's it — the file is ready to use with xray-core.</p>
+<p>For a basic setup, just paste your <strong>VLESS URL</strong> into the corresponding field and click <strong>«Generate config.json»</strong>. That's it — the file is ready to use with xray-core.</p>
 <p>However, we recommend taking a few extra minutes to fine-tune the client configuration. The sections below cover the available options.</p>
 
 <h3>Inbound</h3>
@@ -129,7 +129,7 @@ const TRANSLATIONS = {
         log_level_label:        'Уровень журналирования',
         help_title:             'Справка',
         help_content:           `
-<p>Для базовой настройки достаточно вставить <strong>VLESS URL</strong> в соответствующее поле и нажать <strong>Сгенерировать config.json</strong>. Файл сразу готов к использованию с xray-core.</p>
+<p>Для базовой настройки достаточно вставить <strong>VLESS URL</strong> в соответствующее поле и нажать <strong>«Сгенерировать config.json»</strong>. Файл сразу готов к использованию с xray-core.</p>
 <p>Тем не менее мы рекомендуем уделить несколько минут более тонкой настройке клиента. Доступные параметры описаны ниже.</p>
 
 <h3>Inbound</h3>
