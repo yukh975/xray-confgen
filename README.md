@@ -149,6 +149,17 @@ xray-confgen/
 
 All `.dat` files present in the `db/` directory are detected and used automatically.
 
+To update or add databases, download the required files into the `db/` directory:
+
+| File | Source |
+|------|--------|
+| `geoip.dat` | [Loyalsoldier/v2ray-rules-dat](https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat) |
+| `geosite.dat` | [Loyalsoldier/v2ray-rules-dat](https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat) |
+| `geoip_IR.dat` | [chocolate4u/Iran-v2ray-rules](https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat) |
+| `geosite_IR.dat` | [chocolate4u/Iran-v2ray-rules](https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geosite.dat) |
+| `geoip_RU.dat` | [runetfreedom/russia-v2ray-rules-dat](https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geoip.dat) |
+| `geosite_RU.dat` | [runetfreedom/russia-v2ray-rules-dat](https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/geosite.dat) |
+
 Configure nginx:
 
 ```nginx
