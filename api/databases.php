@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 header('Content-Type: application/json');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
 
 // Path to the directory containing .dat files.
 // Adjust to match your server installation.

@@ -4,6 +4,39 @@
 
 # Changelog
 
+## v1.0.4 — 2026-03-22
+
+### UI
+- VLESS section now supports multiple entries — each with an optional **Name** field and the URI; click **+ Add VLESS** to add more servers, ✕ to remove
+- **Balancer** section added between VLESS and Sniffing: enable toggle, strategy selector (random / leastPing), observatory probe URL and interval (shown only for leastPing)
+- Routing rule action dropdown and **Default outbound** selector are now dynamic: they reflect the current set of VLESS tags (and include a `balancer` option when the balancer is enabled)
+- VLESS name field placeholder shows the auto-generated tag name (proxy, proxy2, …)
+- Labels above the Name and URI fields aligned with their input edges
+- Remove (✕) button vertically aligned with the URI textarea instead of the top of the row
+- **Duplicate VLESS URI detection**: entering the same URI in two rows highlights the duplicate in red and shows an error immediately
+- **URI validation on submit**: each VLESS row must have a non-empty URI starting with `vless://`; invalid rows are highlighted in red and generation is blocked
+
+### Security
+- Added `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY` headers to all PHP API endpoints
+- Inline theme-init script moved to `assets/theme-init.js` to enable a strict `Content-Security-Policy: script-src 'self'` in nginx
+- Nginx config example updated: security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Content-Security-Policy`) and rate limiting (`limit_req_zone`, 20 r/s, burst 30) added
+- Reserved tag names (`direct`, `block`, `balancer`) are now rejected both in the UI (real-time, with red highlight) and in the PHP backend
+
+### Features
+- **Multiple outbounds**: each VLESS entry becomes a separate outbound in the config; tags are derived from the Name field or auto-assigned (proxy, proxy2, …)
+- **Balancer**: when enabled, a `balancers` block is added to routing with the configured strategy; routing rules and the catch-all can target the `balancer` outbound; enabling with fewer than 2 VLESS entries is blocked with an error
+- **leastPing strategy**: when selected, an `observatory` top-level block is added with the configured probe URL and interval
+- **Import config.json** updated: all VLESS outbounds are imported as separate entries; balancer and observatory settings are restored
+- Post-quantum crypto: `encryption=mlkem768x25519plus...` and `pqv` fields are parsed from VLESS URI and included in the outbound user entry; correctly restored on config.json import
+- **Share modal**: clicking Share opens a modal with a QR code (compressed with deflate for scannability) and the full configuration URL displayed on screen; a Copy button lets you copy the URL from the modal; if the URL is too long for QR (e.g. due to a PQ key) a warning is shown and the link is still available
+- **Scan QR → paste URI**: each VLESS row now has a "Paste from QR" button — opens camera on mobile / file picker on desktop, decodes the QR image with jsQR and fills in the URI field
+- Multi-select picker (routing rules, DNS rules): checked items appear at the top of the dropdown, sorted alphabetically; re-sorted on every check/uncheck
+- **DNS server deletion**: deleting a server that is referenced by DNS rules is now blocked with an error message "Remove or reassign those rules first"; indices in rules referencing higher-indexed servers are decremented automatically
+- Default routing rules simplified: removed `geosite:ru → direct` and `geoip:ru → direct`; defaults are now `geoip:private → direct` and `geosite:category-ads-all → block`
+- DNS rule buttons (Add / Clear) are right-aligned
+
+---
+
 ## v1.0.3 — 2026-03-21
 
 ### UI

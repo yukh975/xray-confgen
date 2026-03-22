@@ -74,6 +74,7 @@ function setLang(lang) {
     const rules = collectRules();
     rulesContainer.innerHTML = '';
     rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    updateActionSelects();
 
     // Re-render DNS servers then rules
     const dnsServers = collectDnsServers();
@@ -107,8 +108,6 @@ const DNS_PRESETS = {
 
 const DEFAULT_RULES = [
     { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
-    { db: 'geosite.dat', values: ['ru'],               action: 'direct' },
-    { db: 'geoip.dat',   values: ['ru'],               action: 'direct' },
     { db: 'geosite.dat', values: ['category-ads-all'], action: 'block'  },
 ];
 
@@ -117,8 +116,6 @@ const ROUTE_PRESETS = [
         id: 'preset_russia',
         rules: [
             { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
-            { db: 'geosite.dat', values: ['ru'],               action: 'direct' },
-            { db: 'geoip.dat',   values: ['ru'],               action: 'direct' },
             { db: 'geosite.dat', values: ['category-ads-all'], action: 'block'  },
         ],
     },
@@ -163,6 +160,9 @@ const errorBox       = document.getElementById('error');
 const errorBackdrop  = document.getElementById('error-backdrop');
 const errorText      = document.getElementById('error-text');
 
+const RESERVED_TAGS  = ['direct', 'block', 'balancer'];
+
+const vlessList      = document.getElementById('vless-list');
 const dbListEl       = document.getElementById('db-list');
 const rulesContainer = document.getElementById('routing-rules');
 const addRuleBtn     = document.getElementById('add-rule-btn');
@@ -194,7 +194,11 @@ function saveState() {
         socks5_auth:       document.getElementById('socks5_auth').checked,
         socks5_user:       document.getElementById('socks5_user').value,
         socks5_pass:       document.getElementById('socks5_pass').value,
-        vless_link:        document.getElementById('vless_link').value,
+        vless_entries:     collectVlessEntries(),
+        balancer_enabled:             document.getElementById('balancer_enabled')?.checked ?? false,
+        balancer_strategy:            document.getElementById('balancer_strategy')?.value  ?? 'random',
+        observatory_probe_url:        document.getElementById('observatory_probe_url')?.value        ?? 'https://www.google.com/generate_204',
+        observatory_probe_interval:   document.getElementById('observatory_probe_interval')?.value   ?? '10s',
         sniffing_enabled:          document.getElementById('sniffing_enabled').checked,
         sniffing_dest_http:        document.getElementById('sniffing_dest_http').checked,
         sniffing_dest_tls:         document.getElementById('sniffing_dest_tls').checked,
@@ -330,14 +334,243 @@ logEnabledCheckbox.addEventListener('change', () => {
 //  Auto-resize textarea
 // ============================================================
 
-const vlessTextarea = document.getElementById('vless_link');
-
 function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
 }
 
-vlessTextarea.addEventListener('input', () => autoResize(vlessTextarea));
+// ============================================================
+//  VLESS entry list
+// ============================================================
+
+function getVlessTag(name, index) {
+    const n = (name || '').trim();
+    if (n) return n;
+    return index === 0 ? 'proxy' : 'proxy' + (index + 1);
+}
+
+function getProxyOptions() {
+    const rows = [...vlessList.querySelectorAll('.vless-row')];
+    if (rows.length === 0) return [{ value: 'proxy', label: 'proxy' }];
+    return rows.map((row, i) => {
+        const name = row.querySelector('.vless-name').value.trim();
+        const tag  = getVlessTag(name, i);
+        return { value: tag, label: tag };
+    });
+}
+
+function populateActionSelect(select, currentValue) {
+    const current = currentValue ?? select.value;
+    const balancerEnabled = document.getElementById('balancer_enabled')?.checked;
+    select.innerHTML = '';
+    const opts = [
+        { value: 'direct', label: 'direct' },
+        ...getProxyOptions(),
+        { value: 'block',  label: 'block'  },
+    ];
+    if (balancerEnabled) opts.push({ value: 'balancer', label: 'balancer' });
+    opts.forEach(({ value, label }) => {
+        const opt = document.createElement('option');
+        opt.value       = value;
+        opt.textContent = label;
+        if (value === current) opt.selected = true;
+        select.appendChild(opt);
+    });
+    if (!select.value && select.options.length) select.selectedIndex = 0;
+}
+
+function updateActionSelects() {
+    rulesContainer.querySelectorAll('.rule-action').forEach(sel => {
+        populateActionSelect(sel, sel.value);
+    });
+    const def = document.getElementById('default_outbound');
+    if (def) {
+        const cur             = def.value;
+        const balancerEnabled = document.getElementById('balancer_enabled')?.checked;
+        def.innerHTML = '';
+        const opts = [
+            ...getProxyOptions(),
+            { value: 'direct', label: 'direct' },
+            ...(balancerEnabled ? [{ value: 'balancer', label: 'balancer' }] : []),
+        ];
+        opts.forEach(({ value, label }) => {
+            const opt = document.createElement('option');
+            opt.value       = value;
+            opt.textContent = label;
+            if (value === cur) opt.selected = true;
+            def.appendChild(opt);
+        });
+        if (!def.value && def.options.length) def.selectedIndex = 0;
+    }
+}
+
+function updateVlessPlaceholders() {
+    [...vlessList.querySelectorAll('.vless-row')].forEach((row, i) => {
+        row.querySelector('.vless-name').placeholder = i === 0 ? 'proxy' : 'proxy' + (i + 1);
+    });
+}
+
+function createVlessRow({ name = '', uri = '' } = {}) {
+    const row = document.createElement('div');
+    row.className = 'vless-row';
+
+    const nameGroup = document.createElement('div');
+    nameGroup.className = 'vless-name-group';
+
+    const nameLabel = document.createElement('label');
+    nameLabel.className   = 'vless-field-label';
+    nameLabel.textContent = t('vless_name_label');
+    nameGroup.appendChild(nameLabel);
+
+    const nameInput = document.createElement('input');
+    nameInput.type      = 'text';
+    nameInput.className = 'vless-name';
+    nameInput.value     = name;
+    nameGroup.appendChild(nameInput);
+
+    const uriGroup = document.createElement('div');
+    uriGroup.className = 'vless-uri-group';
+
+    const uriLabel = document.createElement('label');
+    uriLabel.className   = 'vless-field-label';
+    uriLabel.textContent = t('vless_link_label');
+    uriGroup.appendChild(uriLabel);
+
+    const uriTextarea = document.createElement('textarea');
+    uriTextarea.className   = 'vless-uri';
+    uriTextarea.placeholder = 'vless://uuid@host:port?security=tls&type=ws&path=/ws#name';
+    uriTextarea.value       = uri;
+    uriGroup.appendChild(uriTextarea);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type        = 'button';
+    removeBtn.className   = 'remove-btn';
+    removeBtn.title       = t('remove_title');
+    removeBtn.textContent = '✕';
+
+    // QR scan button + hidden file input
+    const qrScanBtn = document.createElement('button');
+    qrScanBtn.type      = 'button';
+    qrScanBtn.className = 'qr-scan-btn';
+    qrScanBtn.textContent = t('qr_scan_btn');
+
+    const qrFileInput = document.createElement('input');
+    qrFileInput.type   = 'file';
+    qrFileInput.accept = 'image/*';
+    qrFileInput.style.display = 'none';
+
+    qrScanBtn.addEventListener('click', () => qrFileInput.click());
+    qrFileInput.addEventListener('change', () => {
+        const file = qrFileInput.files[0];
+        if (!file) return;
+        qrFileInput.value = '';
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width  = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const result = jsQR(imageData.data, imageData.width, imageData.height);
+            URL.revokeObjectURL(img.src);
+            if (!result) {
+                showError(t('err_qr_decode'));
+                return;
+            }
+            const text = result.data.trim();
+            if (!text.startsWith('vless://')) {
+                showError(t('err_qr_no_vless'));
+                return;
+            }
+            uriTextarea.value = text;
+            uriTextarea.dispatchEvent(new Event('input'));
+        };
+        img.onerror = () => showError(t('err_qr_decode'));
+        img.src = URL.createObjectURL(file);
+    });
+
+    uriGroup.appendChild(qrScanBtn);
+    uriGroup.appendChild(qrFileInput);
+
+    nameInput.addEventListener('input', () => {
+        const val = nameInput.value.trim();
+        const isReserved = val !== '' && RESERVED_TAGS.includes(val.toLowerCase());
+        nameInput.classList.toggle('input-error', isReserved);
+        if (isReserved) {
+            showError(t('err_reserved_tag', val));
+        }
+        updateActionSelects();
+        updateVlessPlaceholders();
+        saveState();
+    });
+    uriTextarea.addEventListener('input', () => {
+        autoResize(uriTextarea);
+        const val = uriTextarea.value.trim();
+        const isDup = val !== '' && [...vlessList.querySelectorAll('.vless-uri')].some(
+            ta => ta !== uriTextarea && ta.value.trim() === val
+        );
+        uriTextarea.classList.toggle('input-error', isDup);
+        if (isDup) {
+            showError(t('err_vless_duplicate'));
+            return;
+        }
+        saveState();
+    });
+    removeBtn.addEventListener('click', () => {
+        row.remove();
+        updateVlessPlaceholders();
+        updateActionSelects();
+        saveState();
+    });
+
+    row.appendChild(nameGroup);
+    row.appendChild(uriGroup);
+    row.appendChild(removeBtn);
+
+    // autoResize must be called after the row is in the DOM — see call sites
+    return row;
+}
+
+function collectVlessEntries() {
+    return [...vlessList.querySelectorAll('.vless-row')].map(row => ({
+        name: row.querySelector('.vless-name').value,
+        uri:  row.querySelector('.vless-uri').value,
+    }));
+}
+
+document.getElementById('add-vless-btn')?.addEventListener('click', () => {
+    vlessList.appendChild(createVlessRow());
+    updateVlessPlaceholders();
+    updateActionSelects();
+    saveState();
+});
+
+// ============================================================
+//  Balancer toggle
+// ============================================================
+
+const balancerEnabledCheckbox = document.getElementById('balancer_enabled');
+const balancerFields          = document.getElementById('balancer-fields');
+const observatoryFields       = document.getElementById('observatory-fields');
+const balancerStrategySelect  = document.getElementById('balancer_strategy');
+
+balancerEnabledCheckbox?.addEventListener('change', () => {
+    if (balancerEnabledCheckbox.checked) {
+        const vlessCount = vlessList.querySelectorAll('.vless-row').length;
+        if (vlessCount < 2) {
+            balancerEnabledCheckbox.checked = false;
+            showError(t('err_balancer_min_vless'));
+            return;
+        }
+    }
+    balancerFields.classList.toggle('hidden', !balancerEnabledCheckbox.checked);
+    updateActionSelects();
+});
+
+balancerStrategySelect?.addEventListener('change', () => {
+    observatoryFields.classList.toggle('hidden', balancerStrategySelect.value !== 'leastPing');
+});
 
 // ============================================================
 //  Database list renderer
@@ -563,6 +796,13 @@ function buildValuePicker(initDb, selectedValues = []) {
                     cb.checked ? selected.add(tag) : selected.delete(tag);
                     updateTrigger();
                     saveState();
+                    // Re-render to move checked items to top, preserving search text
+                    const q = dropdown.querySelector('.picker-search input')?.value ?? '';
+                    renderCheckboxes(knownTags);
+                    if (q) {
+                        const si = dropdown.querySelector('.picker-search input');
+                        if (si) { si.value = q; si.dispatchEvent(new Event('input')); }
+                    }
                 });
 
                 const text = document.createElement('span');
@@ -668,11 +908,7 @@ function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule
 
     const actionSelect = document.createElement('select');
     actionSelect.className = 'rule-action';
-    actionSelect.innerHTML = `
-        <option value="direct" ${action === 'direct' ? 'selected' : ''}>direct</option>
-        <option value="proxy"  ${action === 'proxy'  ? 'selected' : ''}>proxy</option>
-        <option value="block"  ${action === 'block'  ? 'selected' : ''}>block</option>
-    `;
+    populateActionSelect(actionSelect, action);
 
     const removeBtn = document.createElement('button');
     removeBtn.type        = 'button';
@@ -694,6 +930,7 @@ function createRuleRow({ db = 'geosite.dat', values = [], action = 'proxy', rule
 function loadDefaultRules() {
     rulesContainer.innerHTML = '';
     DEFAULT_RULES.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    updateActionSelects();
 }
 
 function collectRules() {
@@ -813,7 +1050,29 @@ function createDnsServerRow({ preset = 'google_doh', custom = '', name = '' } = 
     removeBtn.className   = 'remove-btn';
     removeBtn.title       = t('remove_title');
     removeBtn.textContent = '✕';
-    removeBtn.addEventListener('click', () => { row.remove(); updateRuleServerSelects(); saveState(); });
+    removeBtn.addEventListener('click', () => {
+        const allServerRows = [...dnsServersEl.querySelectorAll('.dns-server-row')];
+        const deletedIdx = allServerRows.indexOf(row);
+        // Block deletion if any DNS rule references this server
+        const ruleRows = [...dnsRulesEl.querySelectorAll('.dns-rule-row')];
+        const usedIn = ruleRows.filter(ruleRow => {
+            const sel = ruleRow.querySelector('.dns-server-select');
+            return parseInt(sel.value, 10) === deletedIdx;
+        });
+        if (usedIn.length > 0) {
+            showError(t('err_dns_server_in_use', usedIn.length));
+            return;
+        }
+        // Decrement server_idx in rules referencing higher-indexed servers
+        ruleRows.forEach(ruleRow => {
+            const sel = ruleRow.querySelector('.dns-server-select');
+            const idx = parseInt(sel.value, 10);
+            if (idx > deletedIdx) sel.value = idx - 1;
+        });
+        row.remove();
+        updateRuleServerSelects();
+        saveState();
+    });
 
     row.appendChild(presetSelect);
     row.appendChild(customFields);
@@ -907,7 +1166,26 @@ function applyState(state) {
     document.getElementById('socks5_user').value         = state.socks5_user      ?? '';
     document.getElementById('socks5_pass').value         = state.socks5_pass      ?? '';
     socks5AuthFields.classList.toggle('hidden', !state.socks5_auth);
-    document.getElementById('vless_link').value          = state.vless_link       ?? '';
+    // Backward compat: vless_link → vless_entries
+    const vlessEntries = state.vless_entries ?? (state.vless_link ? [{ name: '', uri: state.vless_link }] : []);
+    vlessList.innerHTML = '';
+    if (vlessEntries.length === 0) {
+        vlessList.appendChild(createVlessRow());
+    } else {
+        vlessEntries.forEach(e => {
+            const row = createVlessRow(e);
+            vlessList.appendChild(row);
+            autoResize(row.querySelector('.vless-uri'));
+        });
+    }
+    updateVlessPlaceholders();
+    const balancerEnabled2 = state.balancer_enabled ?? false;
+    document.getElementById('balancer_enabled').checked           = balancerEnabled2;
+    document.getElementById('balancer_strategy').value            = state.balancer_strategy            ?? 'random';
+    document.getElementById('observatory_probe_url').value        = state.observatory_probe_url        ?? 'https://www.google.com/generate_204';
+    document.getElementById('observatory_probe_interval').value   = state.observatory_probe_interval   ?? '10s';
+    balancerFields.classList.toggle('hidden', !balancerEnabled2);
+    observatoryFields.classList.toggle('hidden', (state.balancer_strategy ?? 'random') !== 'leastPing');
     document.getElementById('sniffing_enabled').checked         = state.sniffing_enabled         ?? true;
     document.getElementById('sniffing_dest_http').checked       = state.sniffing_dest_http       ?? true;
     document.getElementById('sniffing_dest_tls').checked        = state.sniffing_dest_tls        ?? true;
@@ -944,11 +1222,11 @@ function applyState(state) {
     document.getElementById('log_dir').value        = state.log_dir    ?? '';
     document.getElementById('log_level').value      = state.log_level  ?? 'warning';
     logFields.classList.toggle('hidden', !state.log_enabled);
-    autoResize(vlessTextarea);
 
     rulesContainer.innerHTML = '';
     const rules = Array.isArray(state.rules) && state.rules.length ? state.rules : DEFAULT_RULES;
     rules.forEach(rule => rulesContainer.appendChild(createRuleRow(rule)));
+    updateActionSelects();
 }
 
 // ============================================================
@@ -977,7 +1255,7 @@ function applyState(state) {
     let state;
     if (urlParam) {
         try {
-            state = decodeShare(urlParam);
+            state = await decodeShareCompressed(urlParam);
             history.replaceState(null, '', location.pathname);
         } catch {
             state = loadState();
@@ -992,6 +1270,8 @@ function applyState(state) {
     if (state) {
         applyState(state);
     } else {
+        vlessList.appendChild(createVlessRow());
+        updateVlessPlaceholders();
         loadDefaultRules();
     }
 })();
@@ -1004,12 +1284,47 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAll();
 
-    const ip   = document.getElementById('inbound_ip').value.trim();
-    const port = parseInt(document.getElementById('inbound_port').value, 10);
-    const link = document.getElementById('vless_link').value.trim();
+    const ip      = document.getElementById('inbound_ip').value.trim();
+    const port    = parseInt(document.getElementById('inbound_port').value, 10);
+    const allEntries = collectVlessEntries();
 
-    if (!link.startsWith('vless://')) {
+    if (allEntries.length === 0) {
         showError(t('err_vless_prefix'));
+        return;
+    }
+
+    // Validate each row: not empty, starts with vless://
+    let validationError = false;
+    vlessList.querySelectorAll('.vless-uri').forEach(ta => {
+        const val = ta.value.trim();
+        const bad = val === '' || !val.startsWith('vless://');
+        ta.classList.toggle('input-error', bad);
+        if (bad) validationError = true;
+    });
+    if (validationError) {
+        showError(t('err_vless_prefix'));
+        return;
+    }
+
+    // Validate reserved tag names
+    let reservedTag = null;
+    vlessList.querySelectorAll('.vless-name').forEach(inp => {
+        const val = inp.value.trim();
+        if (val !== '' && RESERVED_TAGS.includes(val.toLowerCase())) {
+            inp.classList.add('input-error');
+            if (!reservedTag) reservedTag = val;
+        }
+    });
+    if (reservedTag) {
+        showError(t('err_reserved_tag', reservedTag));
+        return;
+    }
+
+    const entries = allEntries;
+    const uris = entries.map(e => e.uri.trim());
+    const hasDuplicates = uris.some((u, i) => uris.indexOf(u) !== i);
+    if (hasDuplicates) {
+        showError(t('err_vless_duplicate'));
         return;
     }
 
@@ -1028,7 +1343,11 @@ form.addEventListener('submit', async (e) => {
                 socks5_auth:      document.getElementById('socks5_auth').checked,
                 socks5_user:      document.getElementById('socks5_user').value.trim(),
                 socks5_pass:      document.getElementById('socks5_pass').value,
-                vless_link:       link,
+                vless_entries:    entries.map(e => ({ name: e.name.trim(), uri: e.uri.trim() })),
+                balancer_enabled:           document.getElementById('balancer_enabled')?.checked ?? false,
+                balancer_strategy:          document.getElementById('balancer_strategy')?.value  ?? 'random',
+                observatory_probe_url:      document.getElementById('observatory_probe_url')?.value      ?? 'https://www.google.com/generate_204',
+                observatory_probe_interval: document.getElementById('observatory_probe_interval')?.value ?? '10s',
                 sniffing_enabled:      document.getElementById('sniffing_enabled').checked,
                 sniffing_dest_override: [
                     document.getElementById('sniffing_dest_http').checked      && 'http',
@@ -1088,6 +1407,15 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('socks5_user').value        = '';
     document.getElementById('socks5_pass').value        = '';
     socks5AuthFields.classList.add('hidden');
+    vlessList.innerHTML = '';
+    vlessList.appendChild(createVlessRow());
+    updateVlessPlaceholders();
+    document.getElementById('balancer_enabled').checked           = false;
+    document.getElementById('balancer_strategy').value            = 'random';
+    document.getElementById('observatory_probe_url').value        = 'https://www.google.com/generate_204';
+    document.getElementById('observatory_probe_interval').value   = '10s';
+    balancerFields.classList.add('hidden');
+    observatoryFields.classList.add('hidden');
     document.getElementById('sniffing_enabled').checked         = true;
     document.getElementById('sniffing_dest_http').checked       = true;
     document.getElementById('sniffing_dest_tls').checked        = true;
@@ -1119,6 +1447,7 @@ clearBtn.addEventListener('click', () => {
     document.getElementById('log_level').value          = 'warning';
     logFields.classList.add('hidden');
     loadDefaultRules();
+    updateActionSelects();
     hideAll();
     localStorage.removeItem(LS_KEY);
 });
@@ -1156,7 +1485,9 @@ function togglePreset(preset) {
         routingFields.classList.remove('hidden');
 
         if (preset.outbound) {
-            document.getElementById('default_outbound').value = preset.outbound;
+            // Use first VLESS tag instead of hardcoded 'proxy'
+            const firstProxyTag = getProxyOptions()[0]?.value ?? 'proxy';
+            document.getElementById('default_outbound').value = firstProxyTag;
         }
 
         if (preset.bittorrent) {
@@ -1250,8 +1581,59 @@ function decodeShare(str) {
     return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-function getShareUrl() {
-    const state = {
+// Compressed variant for QR — prefix 'z' + deflate-raw + base64url
+async function encodeShareCompressed(state) {
+    const json  = JSON.stringify(state);
+    const bytes = new TextEncoder().encode(json);
+    const cs    = new CompressionStream('deflate-raw');
+    const writer = cs.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const chunks = [];
+    const reader = cs.readable.getReader();
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    const total  = chunks.reduce((s, c) => s + c.length, 0);
+    const result = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { result.set(c, off); off += c.length; }
+    let binary = '';
+    result.forEach(b => binary += String.fromCharCode(b));
+    return 'z' + btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function decodeShareCompressed(str) {
+    // Backward-compat: uncompressed URLs don't start with 'z'
+    if (!str.startsWith('z')) return decodeShare(str);
+    const b64 = str.slice(1).replace(/-/g, '+').replace(/_/g, '/');
+    let padded = b64;
+    while (padded.length % 4) padded += '=';
+    const binary = atob(padded);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const ds     = new DecompressionStream('deflate-raw');
+    const writer = ds.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const chunks = [];
+    const reader = ds.readable.getReader();
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    const total  = chunks.reduce((s, c) => s + c.length, 0);
+    const result = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { result.set(c, off); off += c.length; }
+    return JSON.parse(new TextDecoder().decode(result));
+}
+
+function collectShareState() {
+    return {
         inbound_ip:          document.getElementById('inbound_ip').value,
         inbound_port:        document.getElementById('inbound_port').value,
         http_inbound_enabled: !httpInboundRow.classList.contains('hidden'),
@@ -1260,7 +1642,11 @@ function getShareUrl() {
         socks5_auth:         document.getElementById('socks5_auth').checked,
         socks5_user:         document.getElementById('socks5_user').value,
         socks5_pass:         document.getElementById('socks5_pass').value,
-        vless_link:          document.getElementById('vless_link').value,
+        vless_entries:       collectVlessEntries(),
+        balancer_enabled:             document.getElementById('balancer_enabled')?.checked ?? false,
+        balancer_strategy:            document.getElementById('balancer_strategy')?.value  ?? 'random',
+        observatory_probe_url:        document.getElementById('observatory_probe_url')?.value        ?? 'https://www.google.com/generate_204',
+        observatory_probe_interval:   document.getElementById('observatory_probe_interval')?.value   ?? '10s',
         sniffing_enabled:          document.getElementById('sniffing_enabled').checked,
         sniffing_dest_http:        document.getElementById('sniffing_dest_http').checked,
         sniffing_dest_tls:         document.getElementById('sniffing_dest_tls').checked,
@@ -1287,13 +1673,18 @@ function getShareUrl() {
         log_level:           document.getElementById('log_level').value,
         rules:               collectRules(),
     };
-    return `${location.origin}${location.pathname}?s=${encodeShare(state)}`;
+}
+
+function getShareUrl() {
+    return `${location.origin}${location.pathname}?s=${encodeShare(collectShareState())}`;
 }
 
 const shareBtn = document.getElementById('share-btn');
 
 shareBtn?.addEventListener('click', () => {
-    navigator.clipboard.writeText(getShareUrl()).then(() => {
+    const url = getShareUrl();
+    openQr(url);
+    navigator.clipboard.writeText(url).then(() => {
         shareBtn.textContent = t('share_copied');
         setTimeout(() => { shareBtn.textContent = t('share_btn'); }, 2000);
     });
@@ -1354,61 +1745,72 @@ function parseConfigJson(config) {
         state.sniffing_route_only      = false;
     }
 
-    // --- VLESS URI reconstruction ---
-    const vlessOut = (config.outbounds ?? []).find(o => o.protocol === 'vless');
-    if (vlessOut) {
+    // --- VLESS URI reconstruction (all outbounds) ---
+    function reconstructVlessUri(vlessOut) {
         const vnext = vlessOut.settings?.vnext?.[0];
         const user  = vnext?.users?.[0];
         const ss    = vlessOut.streamSettings ?? {};
         const name  = vlessOut._comment ?? '';
+        if (!vnext || !user) return null;
 
-        if (vnext && user) {
-            const uuid     = user.id;
-            const flow     = user.flow ?? '';
-            const host     = vnext.address;
-            const port     = vnext.port;
-            const network  = ss.network ?? 'tcp';
-            const security = ss.security ?? 'none';
+        const uuid       = user.id;
+        const flow       = user.flow ?? '';
+        const encryption = user.encryption ?? 'none';
+        const pqv        = user.pqv ?? '';
+        const host     = vnext.address;
+        const port     = vnext.port;
+        const network  = ss.network ?? 'tcp';
+        const security = ss.security ?? 'none';
 
-            const params = new URLSearchParams();
-            if (network !== 'tcp')   params.set('type', network);
-            if (security !== 'none') params.set('security', security);
-            if (flow)                params.set('flow', flow);
+        const params = new URLSearchParams();
+        if (network !== 'tcp')        params.set('type', network);
+        if (security !== 'none')      params.set('security', security);
+        if (encryption !== 'none')    params.set('encryption', encryption);
+        if (pqv)                      params.set('pqv', pqv);
+        if (flow)                     params.set('flow', flow);
 
-            if (network === 'ws' && ss.wsSettings) {
-                if (ss.wsSettings.path)            params.set('path', ss.wsSettings.path);
-                if (ss.wsSettings.headers?.Host)   params.set('host', ss.wsSettings.headers.Host);
-            } else if (network === 'xhttp' && ss.xhttpSettings) {
-                if (ss.xhttpSettings.path) params.set('path', ss.xhttpSettings.path);
-                if (ss.xhttpSettings.mode) params.set('mode', ss.xhttpSettings.mode);
-                if (ss.xhttpSettings.host) params.set('host', ss.xhttpSettings.host);
-            } else if (network === 'grpc' && ss.grpcSettings) {
-                if (ss.grpcSettings.serviceName) params.set('serviceName', ss.grpcSettings.serviceName);
-                if (ss.grpcSettings.multiMode)   params.set('mode', 'multi');
-            } else if (network === 'h2' && ss.httpSettings) {
-                if (ss.httpSettings.path) params.set('path', ss.httpSettings.path);
-                const h2Host = Array.isArray(ss.httpSettings.host) ? ss.httpSettings.host[0] : ss.httpSettings.host;
-                if (h2Host) params.set('host', h2Host);
-            }
-
-            if (security === 'tls' && ss.tlsSettings) {
-                if (ss.tlsSettings.serverName) params.set('sni', ss.tlsSettings.serverName);
-                if (ss.tlsSettings.fingerprint) params.set('fp', ss.tlsSettings.fingerprint);
-                if (ss.tlsSettings.alpn?.length) params.set('alpn', ss.tlsSettings.alpn.join(','));
-            } else if (security === 'reality' && ss.realitySettings) {
-                if (ss.realitySettings.serverName)  params.set('sni', ss.realitySettings.serverName);
-                if (ss.realitySettings.fingerprint) params.set('fp',  ss.realitySettings.fingerprint);
-                if (ss.realitySettings.publicKey)   params.set('pbk', ss.realitySettings.publicKey);
-                if (ss.realitySettings.shortId)     params.set('sid', ss.realitySettings.shortId);
-                if (ss.realitySettings.spiderX)     params.set('spx', ss.realitySettings.spiderX);
-            }
-
-            const qs       = params.toString();
-            const fragment = name ? '#' + encodeURIComponent(name) : '';
-            state.vless_link = `vless://${uuid}@${host}:${port}${qs ? '?' + qs : ''}${fragment}`;
+        if (network === 'ws' && ss.wsSettings) {
+            if (ss.wsSettings.path)            params.set('path', ss.wsSettings.path);
+            if (ss.wsSettings.headers?.Host)   params.set('host', ss.wsSettings.headers.Host);
+        } else if (network === 'xhttp' && ss.xhttpSettings) {
+            if (ss.xhttpSettings.path) params.set('path', ss.xhttpSettings.path);
+            if (ss.xhttpSettings.mode) params.set('mode', ss.xhttpSettings.mode);
+            if (ss.xhttpSettings.host) params.set('host', ss.xhttpSettings.host);
+        } else if (network === 'grpc' && ss.grpcSettings) {
+            if (ss.grpcSettings.serviceName) params.set('serviceName', ss.grpcSettings.serviceName);
+            if (ss.grpcSettings.multiMode)   params.set('mode', 'multi');
+        } else if (network === 'h2' && ss.httpSettings) {
+            if (ss.httpSettings.path) params.set('path', ss.httpSettings.path);
+            const h2Host = Array.isArray(ss.httpSettings.host) ? ss.httpSettings.host[0] : ss.httpSettings.host;
+            if (h2Host) params.set('host', h2Host);
         }
+
+        if (security === 'tls' && ss.tlsSettings) {
+            if (ss.tlsSettings.serverName)  params.set('sni', ss.tlsSettings.serverName);
+            if (ss.tlsSettings.fingerprint) params.set('fp',  ss.tlsSettings.fingerprint);
+            if (ss.tlsSettings.alpn?.length) params.set('alpn', ss.tlsSettings.alpn.join(','));
+        } else if (security === 'reality' && ss.realitySettings) {
+            if (ss.realitySettings.serverName)  params.set('sni', ss.realitySettings.serverName);
+            if (ss.realitySettings.fingerprint) params.set('fp',  ss.realitySettings.fingerprint);
+            if (ss.realitySettings.publicKey)   params.set('pbk', ss.realitySettings.publicKey);
+            if (ss.realitySettings.shortId)     params.set('sid', ss.realitySettings.shortId);
+            if (ss.realitySettings.spiderX)     params.set('spx', ss.realitySettings.spiderX);
+        }
+
+        const qs       = params.toString();
+        const fragment = name ? '#' + encodeURIComponent(name) : '';
+        return {
+            uri:  `vless://${uuid}@${host}:${port}${qs ? '?' + qs : ''}${fragment}`,
+            // Use tag as name field unless it looks auto-generated (proxy, proxy2 ...)
+            name: /^proxy\d*$/.test(vlessOut.tag ?? '') ? '' : (vlessOut.tag ?? ''),
+        };
     }
-    state.vless_link = state.vless_link ?? '';
+
+    const vlessOuts = (config.outbounds ?? []).filter(o => o.protocol === 'vless');
+    state.vless_entries = vlessOuts.map(reconstructVlessUri).filter(Boolean);
+    if (state.vless_entries.length === 0) {
+        state.vless_entries = [{ name: '', uri: '' }];
+    }
 
     // --- Routing ---
     const routing = config.routing;
@@ -1421,7 +1823,7 @@ function parseConfigJson(config) {
 
         for (const rule of routing.rules ?? []) {
             if (rule.network === 'tcp,udp') {
-                state.default_outbound = rule.outboundTag ?? 'proxy';
+                state.default_outbound = rule.balancerTag ?? rule.outboundTag ?? 'proxy';
                 continue;
             }
             if (Array.isArray(rule.protocol) && rule.protocol.includes('bittorrent')) {
@@ -1558,6 +1960,24 @@ function parseConfigJson(config) {
         state.log_dir     = '';
     }
 
+    // --- Balancer ---
+    const balancer = (config.routing?.balancers ?? [])[0];
+    if (balancer) {
+        state.balancer_enabled  = true;
+        state.balancer_strategy = balancer.strategy?.type ?? 'random';
+    } else {
+        state.balancer_enabled  = false;
+        state.balancer_strategy = 'random';
+    }
+    const obs = config.observatory;
+    if (obs) {
+        state.observatory_probe_url      = obs.probeUrl      ?? 'https://www.google.com/generate_204';
+        state.observatory_probe_interval = obs.probeInterval ?? '10s';
+    } else {
+        state.observatory_probe_url      = 'https://www.google.com/generate_204';
+        state.observatory_probe_interval = '10s';
+    }
+
     // --- Mux ---
     const mux = (config.outbounds ?? []).find(o => o.protocol === 'vless')?.mux;
     if (mux?.enabled) {
@@ -1641,15 +2061,79 @@ function closeError() {
 
 document.getElementById('result-close').addEventListener('click', closeResult);
 document.getElementById('error-close').addEventListener('click', closeError);
+// ============================================================
+//  QR modal
+// ============================================================
+
+const qrModal      = document.getElementById('qr-modal');
+const qrContainer  = document.getElementById('qr-container');
+const qrClose      = document.getElementById('qr-close');
+const qrTitle      = document.getElementById('qr-title');
+const qrTooLong    = document.getElementById('qr-toolong');
+const qrUrlDisplay = document.getElementById('qr-url-display');
+const qrCopyBtn    = document.getElementById('qr-copy-btn');
+
+async function openQr(shareUrl) {
+    if (!qrModal) return;
+
+    if (qrTitle)      qrTitle.textContent   = t('qr_title');
+    if (qrUrlDisplay) qrUrlDisplay.value    = shareUrl;
+    if (qrContainer)  qrContainer.innerHTML = '';
+    if (qrTooLong)    qrTooLong.classList.add('hidden');
+    if (qrContainer)  qrContainer.classList.remove('hidden');
+
+    // Try compressed URL in QR; fall back to plain if CompressionStream unavailable
+    let qrUrl = shareUrl;
+    try {
+        const encoded = await encodeShareCompressed(collectShareState());
+        qrUrl = `${location.origin}${location.pathname}?s=${encoded}`;
+    } catch { /* use plain shareUrl */ }
+
+    try {
+        new QRCode(qrContainer, {
+            text:         qrUrl,
+            width:        280,
+            height:       280,
+            colorDark:    '#000000',
+            colorLight:   '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L,
+        });
+    } catch {
+        // URL too long — hide QR area, show warning
+        if (qrContainer) qrContainer.classList.add('hidden');
+        if (qrTooLong)   qrTooLong.classList.remove('hidden');
+    }
+
+    errorBackdrop.classList.remove('hidden');
+    qrModal.classList.remove('hidden');
+}
+
+qrCopyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(qrUrlDisplay.value).then(() => {
+        const orig = qrCopyBtn.textContent;
+        qrCopyBtn.textContent = t('qr_copied');
+        setTimeout(() => { qrCopyBtn.textContent = orig; }, 2000);
+    });
+});
+
+function closeQr() {
+    qrModal.classList.add('hidden');
+    errorBackdrop.classList.add('hidden');
+}
+
+qrClose.addEventListener('click', closeQr);
+
 errorBackdrop.addEventListener('click', () => {
     closeError();
     closeHelp();
+    closeQr();
 });
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         closeError();
         closeHelp();
+        closeQr();
     }
 });
 

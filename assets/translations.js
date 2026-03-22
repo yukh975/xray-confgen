@@ -72,8 +72,9 @@ const TRANSLATIONS = {
 <p><strong>Port</strong> is the local port the SOCKS5 proxy listens on. The default <code>10808</code> works in most cases; change it if there is a conflict with another application.</p>
 <p><strong>HTTP inbound</strong> — click <em>Add HTTP inbound</em> to add a second local proxy that accepts HTTP CONNECT requests alongside the SOCKS5 inbound. This is useful for applications that support HTTP proxy but not SOCKS5. The default address is <code>127.0.0.1:8080</code>; IP and port can be changed. Click ✕ to remove the HTTP inbound.</p>
 
-<h3>VLESS URI</h3>
-<p>The VLESS URI encodes all the parameters needed to connect to the remote server. The following formats are supported:</p>
+<h3>VLESS</h3>
+<p>This section holds one or more VLESS URIs — one per outbound connection. Each entry has an optional <strong>Name</strong> field and the <strong>VLESS URI</strong> itself. The name becomes the outbound tag used in routing rules; if left empty, tags are assigned automatically: <code>proxy</code> for the first entry, <code>proxy2</code>, <code>proxy3</code>, … for subsequent ones.</p>
+<p>Click <strong>+ Add VLESS</strong> to add another server. Click ✕ to remove an entry. The following URI formats are supported:</p>
 <ul>
   <li><strong>TCP</strong> — plain TCP transport, with or without TLS/Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket transport, typically with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -81,7 +82,16 @@ const TRANSLATIONS = {
   <li><strong>gRPC</strong> — gRPC transport with optional multi-mode:<br><code>vless://uuid@host:port?security=tls&amp;type=grpc&amp;serviceName=myservice#name</code></li>
   <li><strong>HTTP/2 (h2)</strong> — HTTP/2 transport with TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
 </ul>
-<p>Supported security types: <code>none</code>, <code>tls</code>, <code>reality</code>. The fragment after <code>#</code> is used as a human-readable name for the connection and is stored in the config as a comment.</p>
+<p>Supported security types: <code>none</code>, <code>tls</code>, <code>reality</code>. The fragment after <code>#</code> is used as a human-readable comment in the config.</p>
+
+<h3>Balancer</h3>
+<p>When you have multiple VLESS entries, the <strong>Balancer</strong> section lets you distribute traffic across them automatically instead of routing everything to a single server.</p>
+<p>Enable the balancer to add a virtual <code>balancer</code> outbound that can be selected as the action for routing rules and as the default outbound. xray-core will route each connection through one of the VLESS servers according to the chosen strategy:</p>
+<ul>
+  <li><strong>random</strong> — each connection is sent to a randomly selected server. Simple and fair distribution; no latency measurement required.</li>
+  <li><strong>leastPing</strong> — each connection is sent to the server with the lowest measured latency. Requires <strong>observatory</strong>, which periodically probes all servers. Set the probe URL and interval as needed.</li>
+</ul>
+<p>When the balancer is disabled, all routing rules and the default outbound refer to individual server tags directly.</p>
 
 <h3>Databases</h3>
 <p>This section lists the geo databases available on the server. They are used when configuring routing rules and DNS rules to match traffic by country, region, or category.</p>
@@ -114,10 +124,11 @@ const TRANSLATIONS = {
 </ul>
 <p>Presets add rules without replacing existing ones. Duplicate rules are skipped. Unchecking a preset removes only the rules it added. Use <em>Clear rules</em> to reset everything at once.</p>
 
-<p><strong>Default outbound</strong> is the action applied to traffic that does not match any rule:</p>
+<p><strong>Default outbound</strong> is the action applied to traffic that does not match any rule. The dropdown lists your VLESS server tags (e.g. <code>proxy</code>, <code>proxy2</code>, …), <code>direct</code>, and — if the Balancer is enabled — <code>balancer</code>:</p>
 <ul>
-  <li><code>proxy</code> — send unmatched traffic through the VLESS tunnel (recommended when you want most traffic proxied).</li>
+  <li>A <strong>VLESS tag</strong> — send unmatched traffic through that specific server.</li>
   <li><code>direct</code> — send unmatched traffic directly without the tunnel (recommended when you only want specific traffic proxied).</li>
+  <li><code>balancer</code> — distribute unmatched traffic across all servers according to the balancer strategy (available only when the Balancer section is enabled).</li>
 </ul>
 
 <p><strong>Domain strategy</strong> controls how xray-core resolves domain names before applying routing rules:</p>
@@ -131,9 +142,9 @@ const TRANSLATIONS = {
 <ul>
   <li><strong>Database</strong> — the geo database to match against (<code>geosite.dat</code> for domains and categories, <code>geoip.dat</code> for IP addresses and subnets). Custom databases from the Databases section are also available.</li>
   <li><strong>Tags</strong> — one or more categories from the selected database (e.g. <code>ru</code>, <code>private</code>, <code>category-ads-all</code>). Click the field to open the picker, search by name, or type a custom value.</li>
-  <li><strong>Action</strong> — what to do with matching traffic: <code>proxy</code>, <code>direct</code>, or <code>block</code>.</li>
+  <li><strong>Action</strong> — what to do with matching traffic: a VLESS server tag (e.g. <code>proxy</code>, <code>proxy2</code>), <code>direct</code>, <code>block</code>, or <code>balancer</code> (when the Balancer is enabled).</li>
 </ul>
-<p>A typical setup: apply the <em>Russia</em> preset and set the default outbound to <code>proxy</code>.</p>
+<p>A typical setup: apply the <em>Russia</em> preset and set the default outbound to the first VLESS server tag (<code>proxy</code>).</p>
 
 <h3>DNS</h3>
 <p>This section lets you configure a custom DNS resolver for xray-core. When disabled, the system DNS is used. Configuring DNS is recommended to avoid leaks and to direct different domains to different resolvers.</p>
@@ -212,6 +223,7 @@ const TRANSLATIONS = {
         import_btn:             'Import config.json',
         import_error:           'Could not read the file. Make sure it is a valid config.json generated by this tool.',
         dns_server_duplicate:   'This DNS server is already in the list.',
+        err_dns_server_in_use:  (n) => `This DNS server is used in ${n} rule${n > 1 ? 's' : ''}. Remove or reassign those rules first, then delete the server.`,
         add_http_inbound_btn:     '+ Add HTTP inbound',
         http_inbound_ip_hint:     'HTTP proxy address',
         http_inbound_port_hint:   'HTTP proxy port',
@@ -227,6 +239,26 @@ const TRANSLATIONS = {
         sniffing_dest_override_hint:  'Protocols xray-core will sniff for on inbound traffic',
         sniffing_route_only_label:    'Route only (routeOnly)',
         sniffing_route_only_hint:     'Use detected protocol for routing only, without overriding the destination address',
+        vless_name_label:             'Name',
+        add_vless_btn:                '+ Add VLESS',
+        balancer_enabled_label:       'Enable load balancing',
+        balancer_strategy_label:      'Strategy',
+        balancer_strategy_hint:       'random: distribute connections equally across all servers; leastPing: route to the fastest server (requires observatory)',
+        observatory_probe_url_label:      'Probe URL',
+        observatory_probe_url_hint:       'URL used to measure connection latency to each server',
+        observatory_probe_interval_label: 'Probe interval',
+        observatory_probe_interval_hint:  'How often to probe each server (e.g. 10s, 1m)',
+        qr_title:                     'Share configuration',
+        qr_too_long:                  'Too much data to generate a QR code (likely due to a post-quantum encryption key). Use the link below.',
+        qr_copy_btn:                  'Copy',
+        qr_copied:                    'Copied!',
+        err_no_vless:                 'At least one VLESS URI is required (must start with vless://)',
+        err_vless_duplicate:          'Duplicate VLESS URI — each entry must be unique.',
+        err_reserved_tag:             (name) => `The name "${name}" is reserved and cannot be used as a tag. Use a different name or leave it blank.`,
+        err_balancer_min_vless:       'Load Balancing requires at least 2 VLESS URIs.',
+        qr_scan_btn:                  'Paste from QR',
+        err_qr_no_vless:              'No VLESS URI found in QR code.',
+        err_qr_decode:                'Could not read QR code. Make sure the image is clear and contains a QR code.',
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -301,8 +333,9 @@ const TRANSLATIONS = {
 <p><strong>Порт</strong> — локальный порт, на котором слушает SOCKS5-прокси. Значение по умолчанию <code>10808</code> подходит в большинстве случаев; измените его при конфликте с другим приложением.</p>
 <p><strong>HTTP inbound</strong> — нажмите <em>Добавить HTTP inbound</em>, чтобы добавить второй локальный прокси, принимающий запросы HTTP CONNECT, в дополнение к SOCKS5. Это полезно для приложений, которые поддерживают HTTP-прокси, но не поддерживают SOCKS5. Адрес по умолчанию: <code>127.0.0.1:8080</code>; IP и порт настраиваются. Нажмите ✕, чтобы удалить HTTP inbound.</p>
 
-<h3>VLESS URI</h3>
-<p>VLESS URI содержит все параметры для подключения к удалённому серверу. Поддерживаются следующие форматы:</p>
+<h3>VLESS</h3>
+<p>В этом разделе можно добавить один или несколько VLESS URI — по одному на каждый удалённый сервер. Каждая запись состоит из необязательного поля <strong>Имя</strong> и самого <strong>VLESS URI</strong>. Имя становится тегом outbound, который используется в правилах маршрутизации; если поле оставить пустым, теги назначаются автоматически: <code>proxy</code> для первой записи, <code>proxy2</code>, <code>proxy3</code>, … для последующих.</p>
+<p>Нажмите <strong>+ Добавить VLESS</strong>, чтобы добавить ещё один сервер. Нажмите ✕, чтобы удалить запись. Поддерживаются следующие форматы URI:</p>
 <ul>
   <li><strong>TCP</strong> — TCP-транспорт с TLS или Reality:<br><code>vless://uuid@host:port?security=reality&amp;flow=xtls-rprx-vision&amp;pbk=...&amp;sid=...&amp;fp=chrome#name</code></li>
   <li><strong>WebSocket (WS)</strong> — WebSocket-транспорт, как правило с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=ws&amp;path=/ws&amp;host=example.com#name</code></li>
@@ -310,7 +343,16 @@ const TRANSLATIONS = {
   <li><strong>gRPC</strong> — gRPC-транспорт с опциональным multi-режимом:<br><code>vless://uuid@host:port?security=tls&amp;type=grpc&amp;serviceName=myservice#name</code></li>
   <li><strong>HTTP/2 (h2)</strong> — HTTP/2-транспорт с TLS:<br><code>vless://uuid@host:port?security=tls&amp;type=h2&amp;path=/&amp;host=example.com#name</code></li>
 </ul>
-<p>Поддерживаемые типы безопасности: <code>none</code>, <code>tls</code>, <code>reality</code>. Фрагмент после <code>#</code> используется как читаемое имя подключения и сохраняется в конфиге в виде комментария.</p>
+<p>Поддерживаемые типы безопасности: <code>none</code>, <code>tls</code>, <code>reality</code>. Фрагмент после <code>#</code> используется как читаемый комментарий в конфиге.</p>
+
+<h3>Balancer</h3>
+<p>При наличии нескольких VLESS-записей раздел <strong>Balancer</strong> позволяет автоматически распределять трафик между серверами, не настраивая маршрутизацию вручную.</p>
+<p>При включении балансировщика появляется виртуальный outbound <code>balancer</code>, который можно выбрать в правилах маршрутизации и в качестве маршрута по умолчанию. xray-core будет направлять соединения на серверы в соответствии с выбранной стратегией:</p>
+<ul>
+  <li><strong>random</strong> — каждое соединение направляется на случайно выбранный сервер. Простое и равномерное распределение; измерение задержки не требуется.</li>
+  <li><strong>leastPing</strong> — каждое соединение направляется на сервер с наименьшей измеренной задержкой. Требует <strong>observatory</strong>, который периодически проверяет доступность серверов. Настройте URL и интервал проверки при необходимости.</li>
+</ul>
+<p>При отключённом балансировщике правила маршрутизации и маршрут по умолчанию ссылаются непосредственно на теги отдельных серверов.</p>
 
 <h3>Databases</h3>
 <p>В этом разделе отображается список геобаз данных, доступных на сервере. Они используются при настройке правил маршрутизации и DNS для сопоставления трафика по стране, региону или категории.</p>
@@ -343,10 +385,11 @@ const TRANSLATIONS = {
 </ul>
 <p>Пресеты добавляют правила, не удаляя существующие. Дубликаты пропускаются. При отключении пресета удаляются только добавленные им правила. Кнопка <em>Очистить правила</em> сбрасывает всё сразу.</p>
 
-<p><strong>Маршрут по умолчанию</strong> — действие для трафика, который не попал ни под одно правило:</p>
+<p><strong>Маршрут по умолчанию</strong> — действие для трафика, который не попал ни под одно правило. В выпадающем списке отображаются теги VLESS-серверов (например, <code>proxy</code>, <code>proxy2</code>, …), <code>direct</code>, и — если включён Balancer — <code>balancer</code>:</p>
 <ul>
-  <li><code>proxy</code> — пустить несовпавший трафик через VLESS-туннель (рекомендуется, если большинство трафика должно проксироваться).</li>
+  <li><strong>Тег VLESS-сервера</strong> — пустить несовпавший трафик через этот конкретный сервер.</li>
   <li><code>direct</code> — пустить несовпавший трафик напрямую без туннеля (рекомендуется, если через прокси нужен только отдельный трафик).</li>
+  <li><code>balancer</code> — распределять несовпавший трафик по всем серверам в соответствии со стратегией балансировщика (доступно только при включённом разделе Balancer).</li>
 </ul>
 
 <p><strong>Стратегия доменов</strong> определяет, как xray-core обрабатывает доменные имена перед применением правил маршрутизации:</p>
@@ -360,9 +403,9 @@ const TRANSLATIONS = {
 <ul>
   <li><strong>База данных</strong> — геобаза для сопоставления (<code>geosite.dat</code> — домены и категории, <code>geoip.dat</code> — IP-адреса и подсети). Доступны также кастомные базы из раздела Databases.</li>
   <li><strong>Теги</strong> — одна или несколько категорий из выбранной базы (например, <code>ru</code>, <code>private</code>, <code>category-ads-all</code>). Нажмите на поле, чтобы открыть список, воспользуйтесь поиском или введите своё значение.</li>
-  <li><strong>Действие</strong> — что делать с совпавшим трафиком: <code>proxy</code>, <code>direct</code> или <code>block</code>.</li>
+  <li><strong>Действие</strong> — что делать с совпавшим трафиком: тег VLESS-сервера (например, <code>proxy</code>, <code>proxy2</code>), <code>direct</code>, <code>block</code> или <code>balancer</code> (при включённом Balancer).</li>
 </ul>
-<p>Типичная настройка: применить пресет <em>Россия</em> и установить маршрут по умолчанию <code>proxy</code>.</p>
+<p>Типичная настройка: применить пресет <em>Россия</em> и установить маршрут по умолчанию в тег первого VLESS-сервера (<code>proxy</code>).</p>
 
 <h3>DNS</h3>
 <p>Раздел позволяет настроить собственный DNS-резолвер для xray-core. Если раздел отключён, используется системный DNS. Настройка DNS рекомендуется для предотвращения утечек и для направления разных доменов в разные резолверы.</p>
@@ -441,6 +484,7 @@ const TRANSLATIONS = {
         import_btn:             'Импортировать config.json',
         import_error:           'Не удалось прочитать файл. Убедитесь, что это корректный config.json, созданный этим инструментом.',
         dns_server_duplicate:   'Этот DNS-сервер уже есть в списке.',
+        err_dns_server_in_use:  (n) => `Этот DNS-сервер используется в ${n} правил${n === 1 ? 'е' : 'ах'}. Сначала удалите или измените эти правила, затем удалите сервер.`,
         add_http_inbound_btn:     '+ Добавить HTTP inbound',
         http_inbound_ip_hint:     'Адрес HTTP-прокси',
         http_inbound_port_hint:   'Порт HTTP-прокси',
@@ -456,5 +500,25 @@ const TRANSLATIONS = {
         sniffing_dest_override_hint:  'Протоколы, которые xray-core будет определять во входящем трафике',
         sniffing_route_only_label:    'Только для маршрутизации (routeOnly)',
         sniffing_route_only_hint:     'Использовать определённый протокол только для маршрутизации, без подмены адреса назначения',
+        vless_name_label:             'Имя',
+        add_vless_btn:                '+ Добавить VLESS',
+        balancer_enabled_label:       'Включить балансировку нагрузки',
+        balancer_strategy_label:      'Стратегия',
+        balancer_strategy_hint:       'random: распределять соединения равномерно по всем серверам; leastPing: направлять на самый быстрый сервер (требует observatory)',
+        observatory_probe_url_label:      'URL проверки',
+        observatory_probe_url_hint:       'URL для измерения задержки до каждого сервера',
+        observatory_probe_interval_label: 'Интервал проверки',
+        observatory_probe_interval_hint:  'Как часто проверять серверы (например, 10s, 1m)',
+        qr_title:                     'Поделиться конфигурацией',
+        qr_too_long:                  'Слишком много данных для QR-кода (вероятно, из-за ключа пост-квантового шифрования). Воспользуйтесь ссылкой ниже.',
+        qr_copy_btn:                  'Копировать',
+        qr_copied:                    'Скопировано!',
+        err_no_vless:                 'Требуется хотя бы один VLESS URI (должен начинаться с vless://)',
+        err_vless_duplicate:          'Дублирующийся VLESS URI — каждая ссылка должна быть уникальной.',
+        err_reserved_tag:             (name) => `Имя «${name}» зарезервировано и не может использоваться как тег. Используйте другое имя или оставьте поле пустым.`,
+        err_balancer_min_vless:       'Для балансировки нагрузки требуется минимум 2 VLESS URI.',
+        qr_scan_btn:                  'Вставить из QR',
+        err_qr_no_vless:              'В QR-коде не найден VLESS URI.',
+        err_qr_decode:                'Не удалось распознать QR-код. Убедитесь, что изображение чёткое и содержит QR-код.',
     },
 };

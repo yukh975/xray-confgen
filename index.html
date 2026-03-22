@@ -6,7 +6,7 @@
     <title>Xray config generator</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="assets/style.css">
-    <script>(function(){var t=localStorage.getItem('xray_theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');})()</script>
+    <script src="assets/theme-init.js"></script>
 </head>
 <body>
     <div class="container">
@@ -112,15 +112,47 @@
             <!-- VLESS -->
             <div class="section-title">VLESS</div>
 
+            <div id="vless-list">
+                <!-- populated by JS -->
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:8px">
+                <button type="button" id="add-vless-btn" class="add-btn" data-i18n="add_vless_btn"></button>
+            </div>
+
+            <!-- Balancer -->
+            <div class="section-title">Balancer</div>
+
             <div class="field-group">
-                <label for="vless_link" data-i18n="vless_link_label"></label>
-                <textarea
-                    id="vless_link"
-                    name="vless_link"
-                    placeholder="vless://uuid@host:port?security=tls&type=ws&path=/ws#name"
-                    required
-                ></textarea>
-                <span class="hint" data-i18n="vless_link_hint"></span>
+                <label class="toggle-row">
+                    <input type="checkbox" id="balancer_enabled" name="balancer_enabled">
+                    <span class="toggle-label" data-i18n="balancer_enabled_label"></span>
+                </label>
+                <div id="balancer-fields" class="auth-fields hidden">
+                    <div class="field-row" style="margin-top:10px">
+                        <div class="field-group">
+                            <label for="balancer_strategy" data-i18n="balancer_strategy_label"></label>
+                            <select id="balancer_strategy">
+                                <option value="random">random</option>
+                                <option value="leastPing">leastPing</option>
+                            </select>
+                            <span class="hint" data-i18n="balancer_strategy_hint"></span>
+                        </div>
+                    </div>
+                    <div id="observatory-fields" class="hidden">
+                        <div class="field-row" style="margin-top:8px">
+                            <div class="field-group">
+                                <label for="observatory_probe_url" data-i18n="observatory_probe_url_label"></label>
+                                <input type="text" id="observatory_probe_url" value="https://www.google.com/generate_204">
+                                <span class="hint" data-i18n="observatory_probe_url_hint"></span>
+                            </div>
+                            <div class="field-group">
+                                <label for="observatory_probe_interval" data-i18n="observatory_probe_interval_label"></label>
+                                <input type="text" id="observatory_probe_interval" value="10s">
+                                <span class="hint" data-i18n="observatory_probe_interval_hint"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sniffing -->
@@ -172,8 +204,7 @@
                         <div class="field-group">
                             <label for="default_outbound" data-i18n="default_outbound_label"></label>
                             <select id="default_outbound">
-                                <option value="proxy">proxy</option>
-                                <option value="direct">direct</option>
+                                <!-- populated by JS -->
                             </select>
                         </div>
                         <div class="field-group">
@@ -377,13 +408,30 @@
             <button type="button" id="error-close" class="error-close">✕</button>
         </div>
 
+        <div id="qr-modal" class="qr-modal hidden">
+            <div class="qr-modal-header">
+                <span id="qr-title"></span>
+                <button type="button" id="qr-close" class="result-close">✕</button>
+            </div>
+            <div id="qr-area">
+                <div id="qr-container" class="qr-container"></div>
+                <p id="qr-toolong" class="qr-toolong hidden" data-i18n="qr_too_long"></p>
+            </div>
+            <div class="qr-url-row">
+                <input type="text" id="qr-url-display" class="qr-url-display" readonly>
+                <button type="button" id="qr-copy-btn" class="qr-copy-btn" data-i18n="qr_copy_btn"></button>
+            </div>
+        </div>
+
         <footer class="copyright">
             <div>© 2026 Yuriy Khachaturian</div>
             <div><a href="https://github.com/yukh975/xray-confgen" target="_blank" rel="noopener">Source code on GitHub</a></div>
-            <div>v1.0.3</div>
+            <div>v1.0.4</div>
         </footer>
     </div>
 
+    <script src="assets/qrcode.min.js"></script>
+    <script src="assets/jsqr.min.js"></script>
     <script src="assets/translations.js"></script>
     <script src="assets/app.js"></script>
 </body>
