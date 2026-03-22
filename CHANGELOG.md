@@ -4,7 +4,7 @@
 
 # Changelog
 
-## v1.0.4 — unreleased
+## v1.0.4 — 2026-03-22
 
 ### UI
 - VLESS section now supports multiple entries — each with an optional **Name** field and the URI; click **+ Add VLESS** to add more servers, ✕ to remove
