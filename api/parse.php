@@ -143,9 +143,11 @@ function parseVless(string $link): array
 
     parse_str($url['query'] ?? '', $q);
 
-    $network  = $q['type']     ?? 'tcp';
-    $security = $q['security'] ?? 'none';
-    $flow     = $q['flow']     ?? '';
+    $network    = $q['type']       ?? 'tcp';
+    $security   = $q['security']   ?? 'none';
+    $flow       = $q['flow']       ?? '';
+    $encryption = $q['encryption'] ?? 'none';
+    $pqv        = $q['pqv']        ?? '';
 
     // flow is not compatible with xhttp
     if ($network === 'xhttp') {
@@ -160,6 +162,8 @@ function parseVless(string $link): array
         'network'          => $network,
         'security'         => $security,
         'flow'             => $flow,
+        'encryption'       => $encryption,
+        'pqv'              => $pqv,
         'transport'        => parseTransport($network, $q, $url['host']),
         'securitySettings' => parseSecurity($security, $q, $url['host']),
     ];
@@ -250,7 +254,10 @@ function buildConfig(string $ip, int $port, array $vlessEntries, array $outbound
         $v   = $entry['parsed'];
         $tag = $outboundTags[$i];
 
-        $userEntry = ['id' => $v['uuid'], 'encryption' => 'none'];
+        $userEntry = ['id' => $v['uuid'], 'encryption' => $v['encryption']];
+        if ($v['pqv'] !== '') {
+            $userEntry['pqv'] = $v['pqv'];
+        }
         if ($v['flow'] !== '') {
             $userEntry['flow'] = $v['flow'];
         }

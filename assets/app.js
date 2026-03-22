@@ -1550,7 +1550,9 @@ function getShareUrl() {
 const shareBtn = document.getElementById('share-btn');
 
 shareBtn?.addEventListener('click', () => {
-    navigator.clipboard.writeText(getShareUrl()).then(() => {
+    const url = getShareUrl();
+    openQr(url);
+    navigator.clipboard.writeText(url).then(() => {
         shareBtn.textContent = t('share_copied');
         setTimeout(() => { shareBtn.textContent = t('share_btn'); }, 2000);
     });
@@ -1923,15 +1925,46 @@ function closeError() {
 
 document.getElementById('result-close').addEventListener('click', closeResult);
 document.getElementById('error-close').addEventListener('click', closeError);
+// ============================================================
+//  QR modal
+// ============================================================
+
+const qrModal     = document.getElementById('qr-modal');
+const qrContainer = document.getElementById('qr-container');
+const qrClose     = document.getElementById('qr-close');
+
+function openQr(url) {
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+        text:         url,
+        width:        220,
+        height:       220,
+        colorDark:    '#000000',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+    });
+    errorBackdrop.classList.remove('hidden');
+    qrModal.classList.remove('hidden');
+}
+
+function closeQr() {
+    qrModal.classList.add('hidden');
+    errorBackdrop.classList.add('hidden');
+}
+
+qrClose.addEventListener('click', closeQr);
+
 errorBackdrop.addEventListener('click', () => {
     closeError();
     closeHelp();
+    closeQr();
 });
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         closeError();
         closeHelp();
+        closeQr();
     }
 });
 

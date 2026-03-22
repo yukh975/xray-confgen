@@ -408,6 +408,15 @@
             <button type="button" id="error-close" class="error-close">✕</button>
         </div>
 
+        <div id="qr-modal" class="qr-modal hidden">
+            <div class="qr-modal-header">
+                <span data-i18n="qr_title"></span>
+                <button type="button" id="qr-close" class="result-close">✕</button>
+            </div>
+            <div id="qr-container" class="qr-container"></div>
+            <p class="qr-hint" data-i18n="qr_hint"></p>
+        </div>
+
         <footer class="copyright">
             <div>© 2026 Yuriy Khachaturian</div>
             <div><a href="https://github.com/yukh975/xray-confgen" target="_blank" rel="noopener">Source code on GitHub</a></div>
@@ -415,6 +424,7 @@
         </footer>
     </div>
 
+    <script src="assets/qrcode.min.js"></script>
     <script src="assets/translations.js"></script>
     <script src="assets/app.js"></script>
 </body>
