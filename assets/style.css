@@ -641,16 +641,20 @@ button.secondary:hover {
 .qr-scan-btn {
     display: inline-block;
     margin-top: 6px;
-    padding: 4px 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
     font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 5px;
     cursor: pointer;
 }
 
-.qr-scan-btn:hover { background: var(--hover); }
+.qr-scan-btn:hover {
+    background: var(--accent);
+    color: #fff;
+}
 
 /* Sniffing section */
 
