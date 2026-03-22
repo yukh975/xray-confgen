@@ -1681,8 +1681,8 @@ function getShareUrl() {
 
 const shareBtn = document.getElementById('share-btn');
 
-shareBtn?.addEventListener('click', () => {
-    openQr();
+shareBtn?.addEventListener('click', async () => {
+    await openQr();
     const url = getShareUrl();
     navigator.clipboard.writeText(url).then(() => {
         shareBtn.textContent = t('share_copied');
