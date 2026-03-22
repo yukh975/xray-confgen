@@ -154,6 +154,7 @@ body {
 .routing-btns-right {
     display: flex;
     gap: 8px;
+    justify-content: flex-end;
 }
 
 .preset-wrap {
