@@ -1220,6 +1220,30 @@ pre#result-json {
     line-height: 0;
 }
 
+.qr-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.qr-nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.qr-nav-btn:hover { background: var(--hover); }
+
 .qr-hint {
     margin: 12px 0 0;
     font-size: 12px;

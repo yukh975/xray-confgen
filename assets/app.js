@@ -1583,8 +1583,8 @@ function getShareUrl() {
 const shareBtn = document.getElementById('share-btn');
 
 shareBtn?.addEventListener('click', () => {
+    openQr();
     const url = getShareUrl();
-    openQr(url);
     navigator.clipboard.writeText(url).then(() => {
         shareBtn.textContent = t('share_copied');
         setTimeout(() => { shareBtn.textContent = t('share_btn'); }, 2000);
@@ -1965,34 +1965,55 @@ document.getElementById('error-close').addEventListener('click', closeError);
 const qrModal     = document.getElementById('qr-modal');
 const qrContainer = document.getElementById('qr-container');
 const qrClose     = document.getElementById('qr-close');
+const qrNav       = document.getElementById('qr-nav');
+const qrPrev      = document.getElementById('qr-prev');
+const qrNext      = document.getElementById('qr-next');
+const qrCounter   = document.getElementById('qr-counter');
+const qrTitle     = document.getElementById('qr-title');
 
-function openQr(url) {
+let qrUris   = [];
+let qrIndex  = 0;
+
+function renderQrCode(uri) {
     qrContainer.innerHTML = '';
-    // Try progressively lower error correction levels to maximise cell size
-    const levels = [QRCode.CorrectLevel.L, QRCode.CorrectLevel.M, QRCode.CorrectLevel.Q];
-    let generated = false;
-    for (const level of levels) {
-        try {
-            new QRCode(qrContainer, {
-                text:         url,
-                width:        280,
-                height:       280,
-                colorDark:    '#000000',
-                colorLight:   '#ffffff',
-                correctLevel: level,
-            });
-            generated = true;
-            break;
-        } catch (e) {
-            qrContainer.innerHTML = '';
-        }
+    new QRCode(qrContainer, {
+        text:         uri,
+        width:        280,
+        height:       280,
+        colorDark:    '#000000',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L,
+    });
+}
+
+function openQr() {
+    const entries = collectVlessEntries().filter(e => e.uri.trim().startsWith('vless://'));
+    if (entries.length === 0) return;
+
+    qrUris  = entries.map(e => e.uri.trim());
+    qrIndex = 0;
+
+    const multi = qrUris.length > 1;
+    qrNav.classList.toggle('hidden', !multi);
+    qrTitle.textContent = multi ? t('qr_title_multi') : t('qr_title');
+
+    renderQrCode(qrUris[0]);
+    if (multi) {
+        qrCounter.textContent = `1 / ${qrUris.length}`;
+        qrPrev.disabled = true;
+        qrNext.disabled = qrUris.length <= 1;
     }
-    if (!generated) {
-        // URL exceeds QR capacity at any level — skip modal, clipboard copy still works
-        return;
-    }
+
     errorBackdrop.classList.remove('hidden');
     qrModal.classList.remove('hidden');
+}
+
+function qrGo(delta) {
+    qrIndex = Math.max(0, Math.min(qrUris.length - 1, qrIndex + delta));
+    renderQrCode(qrUris[qrIndex]);
+    qrCounter.textContent = `${qrIndex + 1} / ${qrUris.length}`;
+    qrPrev.disabled = qrIndex === 0;
+    qrNext.disabled = qrIndex === qrUris.length - 1;
 }
 
 function closeQr() {
@@ -2001,6 +2022,8 @@ function closeQr() {
 }
 
 qrClose.addEventListener('click', closeQr);
+qrPrev.addEventListener('click', () => qrGo(-1));
+qrNext.addEventListener('click', () => qrGo(1));
 
 errorBackdrop.addEventListener('click', () => {
     closeError();
