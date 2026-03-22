@@ -1682,8 +1682,8 @@ function getShareUrl() {
 const shareBtn = document.getElementById('share-btn');
 
 shareBtn?.addEventListener('click', () => {
-    openQr();
     const url = getShareUrl();
+    openQr(url);
     navigator.clipboard.writeText(url).then(() => {
         shareBtn.textContent = t('share_copied');
         setTimeout(() => { shareBtn.textContent = t('share_btn'); }, 2000);
@@ -2061,55 +2061,56 @@ document.getElementById('error-close').addEventListener('click', closeError);
 //  QR modal
 // ============================================================
 
-const qrModal     = document.getElementById('qr-modal');
-const qrContainer = document.getElementById('qr-container');
-const qrClose     = document.getElementById('qr-close');
-const qrTitle     = document.getElementById('qr-title');
+const qrModal      = document.getElementById('qr-modal');
+const qrContainer  = document.getElementById('qr-container');
+const qrClose      = document.getElementById('qr-close');
+const qrTitle      = document.getElementById('qr-title');
+const qrTooLong    = document.getElementById('qr-toolong');
+const qrUrlDisplay = document.getElementById('qr-url-display');
+const qrCopyBtn    = document.getElementById('qr-copy-btn');
 
-// QR state: list of VLESS URIs for multi-entry navigation
-let qrUris  = [];
-let qrIndex = 0;
-
-const qrNav     = document.getElementById('qr-nav');
-const qrPrev    = document.getElementById('qr-prev');
-const qrNext    = document.getElementById('qr-next');
-const qrCounter = document.getElementById('qr-counter');
-
-function renderQrPage(index) {
-    qrContainer.innerHTML = '';
-    new QRCode(qrContainer, {
-        text:         qrUris[index],
-        width:        280,
-        height:       280,
-        colorDark:    '#000000',
-        colorLight:   '#ffffff',
-        correctLevel: QRCode.CorrectLevel.L,
-    });
-    if (qrUris.length > 1) {
-        qrCounter.textContent = `${index + 1} / ${qrUris.length}`;
-        qrPrev.disabled = index === 0;
-        qrNext.disabled = index === qrUris.length - 1;
-    }
-}
-
-function openQr() {
-    const entries = collectVlessEntries().filter(e => e.uri.trim().startsWith('vless://'));
-    if (entries.length === 0) return;
-
-    qrUris  = entries.map(e => e.uri.trim());
-    qrIndex = 0;
-
-    const multi = qrUris.length > 1;
-    qrNav.classList.toggle('hidden', !multi);
+async function openQr(shareUrl) {
     qrTitle.textContent = t('qr_title');
+    qrUrlDisplay.value  = shareUrl;
+    qrContainer.innerHTML = '';
+    qrTooLong.classList.add('hidden');
+    qrContainer.classList.remove('hidden');
 
-    renderQrPage(0);
+    // Try compressed URL in QR; fall back to plain if CompressionStream unavailable
+    let qrUrl;
+    try {
+        const encoded = await encodeShareCompressed(collectShareState());
+        qrUrl = `${location.origin}${location.pathname}?s=${encoded}`;
+    } catch {
+        qrUrl = shareUrl;
+    }
+
+    try {
+        new QRCode(qrContainer, {
+            text:         qrUrl,
+            width:        280,
+            height:       280,
+            colorDark:    '#000000',
+            colorLight:   '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L,
+        });
+    } catch {
+        // URL too long — hide QR area, show warning
+        qrContainer.classList.add('hidden');
+        qrTooLong.classList.remove('hidden');
+    }
+
     errorBackdrop.classList.remove('hidden');
     qrModal.classList.remove('hidden');
 }
 
-qrPrev?.addEventListener('click', () => { qrIndex--; renderQrPage(qrIndex); });
-qrNext?.addEventListener('click', () => { qrIndex++; renderQrPage(qrIndex); });
+qrCopyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(qrUrlDisplay.value).then(() => {
+        const orig = qrCopyBtn.textContent;
+        qrCopyBtn.textContent = t('qr_copied');
+        setTimeout(() => { qrCopyBtn.textContent = orig; }, 2000);
+    });
+});
 
 function closeQr() {
     qrModal.classList.add('hidden');

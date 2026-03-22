@@ -413,13 +413,14 @@
                 <span id="qr-title"></span>
                 <button type="button" id="qr-close" class="result-close">✕</button>
             </div>
-            <div id="qr-container" class="qr-container"></div>
-            <div id="qr-nav" class="qr-nav hidden">
-                <button type="button" id="qr-prev" class="qr-nav-btn">&#8592;</button>
-                <span id="qr-counter"></span>
-                <button type="button" id="qr-next" class="qr-nav-btn">&#8594;</button>
+            <div id="qr-area">
+                <div id="qr-container" class="qr-container"></div>
+                <p id="qr-toolong" class="qr-toolong hidden" data-i18n="qr_too_long"></p>
             </div>
-            <p class="qr-hint" data-i18n="qr_hint"></p>
+            <div class="qr-url-row">
+                <input type="text" id="qr-url-display" class="qr-url-display" readonly>
+                <button type="button" id="qr-copy-btn" class="qr-copy-btn" data-i18n="qr_copy_btn"></button>
+            </div>
         </div>
 
         <footer class="copyright">
