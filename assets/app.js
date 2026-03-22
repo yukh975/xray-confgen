@@ -1210,7 +1210,7 @@ function applyState(state) {
     let state;
     if (urlParam) {
         try {
-            state = decodeShare(urlParam);
+            state = await decodeShareCompressed(urlParam);
             history.replaceState(null, '', location.pathname);
         } catch {
             state = loadState();
@@ -1536,8 +1536,59 @@ function decodeShare(str) {
     return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-function getShareUrl() {
-    const state = {
+// Compressed variant for QR — prefix 'z' + deflate-raw + base64url
+async function encodeShareCompressed(state) {
+    const json  = JSON.stringify(state);
+    const bytes = new TextEncoder().encode(json);
+    const cs    = new CompressionStream('deflate-raw');
+    const writer = cs.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const chunks = [];
+    const reader = cs.readable.getReader();
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    const total  = chunks.reduce((s, c) => s + c.length, 0);
+    const result = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { result.set(c, off); off += c.length; }
+    let binary = '';
+    result.forEach(b => binary += String.fromCharCode(b));
+    return 'z' + btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function decodeShareCompressed(str) {
+    // Backward-compat: uncompressed URLs don't start with 'z'
+    if (!str.startsWith('z')) return decodeShare(str);
+    const b64 = str.slice(1).replace(/-/g, '+').replace(/_/g, '/');
+    let padded = b64;
+    while (padded.length % 4) padded += '=';
+    const binary = atob(padded);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const ds     = new DecompressionStream('deflate-raw');
+    const writer = ds.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const chunks = [];
+    const reader = ds.readable.getReader();
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    const total  = chunks.reduce((s, c) => s + c.length, 0);
+    const result = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { result.set(c, off); off += c.length; }
+    return JSON.parse(new TextDecoder().decode(result));
+}
+
+function collectShareState() {
+    return {
         inbound_ip:          document.getElementById('inbound_ip').value,
         inbound_port:        document.getElementById('inbound_port').value,
         http_inbound_enabled: !httpInboundRow.classList.contains('hidden'),
@@ -1577,7 +1628,10 @@ function getShareUrl() {
         log_level:           document.getElementById('log_level').value,
         rules:               collectRules(),
     };
-    return `${location.origin}${location.pathname}?s=${encodeShare(state)}`;
+}
+
+function getShareUrl() {
+    return `${location.origin}${location.pathname}?s=${encodeShare(collectShareState())}`;
 }
 
 const shareBtn = document.getElementById('share-btn');
@@ -1965,55 +2019,25 @@ document.getElementById('error-close').addEventListener('click', closeError);
 const qrModal     = document.getElementById('qr-modal');
 const qrContainer = document.getElementById('qr-container');
 const qrClose     = document.getElementById('qr-close');
-const qrNav       = document.getElementById('qr-nav');
-const qrPrev      = document.getElementById('qr-prev');
-const qrNext      = document.getElementById('qr-next');
-const qrCounter   = document.getElementById('qr-counter');
 const qrTitle     = document.getElementById('qr-title');
 
-let qrUris   = [];
-let qrIndex  = 0;
+async function openQr() {
+    const state   = collectShareState();
+    const encoded = await encodeShareCompressed(state);
+    const url     = `${location.origin}${location.pathname}?s=${encoded}`;
 
-function renderQrCode(uri) {
+    qrTitle.textContent = t('qr_title');
     qrContainer.innerHTML = '';
     new QRCode(qrContainer, {
-        text:         uri,
+        text:         url,
         width:        280,
         height:       280,
         colorDark:    '#000000',
         colorLight:   '#ffffff',
         correctLevel: QRCode.CorrectLevel.L,
     });
-}
-
-function openQr() {
-    const entries = collectVlessEntries().filter(e => e.uri.trim().startsWith('vless://'));
-    if (entries.length === 0) return;
-
-    qrUris  = entries.map(e => e.uri.trim());
-    qrIndex = 0;
-
-    const multi = qrUris.length > 1;
-    qrNav.classList.toggle('hidden', !multi);
-    qrTitle.textContent = multi ? t('qr_title_multi') : t('qr_title');
-
-    renderQrCode(qrUris[0]);
-    if (multi) {
-        qrCounter.textContent = `1 / ${qrUris.length}`;
-        qrPrev.disabled = true;
-        qrNext.disabled = qrUris.length <= 1;
-    }
-
     errorBackdrop.classList.remove('hidden');
     qrModal.classList.remove('hidden');
-}
-
-function qrGo(delta) {
-    qrIndex = Math.max(0, Math.min(qrUris.length - 1, qrIndex + delta));
-    renderQrCode(qrUris[qrIndex]);
-    qrCounter.textContent = `${qrIndex + 1} / ${qrUris.length}`;
-    qrPrev.disabled = qrIndex === 0;
-    qrNext.disabled = qrIndex === qrUris.length - 1;
 }
 
 function closeQr() {
@@ -2022,8 +2046,6 @@ function closeQr() {
 }
 
 qrClose.addEventListener('click', closeQr);
-qrPrev.addEventListener('click', () => qrGo(-1));
-qrNext.addEventListener('click', () => qrGo(1));
 
 errorBackdrop.addEventListener('click', () => {
     closeError();
