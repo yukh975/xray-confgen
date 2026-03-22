@@ -637,6 +637,21 @@ button.secondary:hover {
     box-sizing: border-box;
 }
 
+.qr-scan-btn {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.qr-scan-btn:hover { opacity: 0.75; }
+
 /* Sniffing section */
 
 #sniffing-fields {

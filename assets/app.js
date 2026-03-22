@@ -448,6 +448,51 @@ function createVlessRow({ name = '', uri = '' } = {}) {
     removeBtn.title       = t('remove_title');
     removeBtn.textContent = '✕';
 
+    // QR scan button + hidden file input
+    const qrScanBtn = document.createElement('button');
+    qrScanBtn.type      = 'button';
+    qrScanBtn.className = 'qr-scan-btn';
+    qrScanBtn.textContent = t('qr_scan_btn');
+
+    const qrFileInput = document.createElement('input');
+    qrFileInput.type   = 'file';
+    qrFileInput.accept = 'image/*';
+    qrFileInput.style.display = 'none';
+
+    qrScanBtn.addEventListener('click', () => qrFileInput.click());
+    qrFileInput.addEventListener('change', () => {
+        const file = qrFileInput.files[0];
+        if (!file) return;
+        qrFileInput.value = '';
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width  = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const result = jsQR(imageData.data, imageData.width, imageData.height);
+            URL.revokeObjectURL(img.src);
+            if (!result) {
+                showError(t('err_qr_decode'));
+                return;
+            }
+            const text = result.data.trim();
+            if (!text.startsWith('vless://')) {
+                showError(t('err_qr_no_vless'));
+                return;
+            }
+            uriTextarea.value = text;
+            uriTextarea.dispatchEvent(new Event('input'));
+        };
+        img.onerror = () => showError(t('err_qr_decode'));
+        img.src = URL.createObjectURL(file);
+    });
+
+    uriGroup.appendChild(qrScanBtn);
+    uriGroup.appendChild(qrFileInput);
+
     nameInput.addEventListener('input', () => {
         const val = nameInput.value.trim();
         const isReserved = val !== '' && RESERVED_TAGS.includes(val.toLowerCase());

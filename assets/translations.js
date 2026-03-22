@@ -254,6 +254,9 @@ const TRANSLATIONS = {
         err_vless_duplicate:          'Duplicate VLESS URI — each entry must be unique.',
         err_reserved_tag:             (name) => `The name "${name}" is reserved and cannot be used as a tag. Use a different name or leave it blank.`,
         err_balancer_min_vless:       'Load Balancing requires at least 2 VLESS URIs.',
+        qr_scan_btn:                  'Paste from QR',
+        err_qr_no_vless:              'No VLESS URI found in QR code.',
+        err_qr_decode:                'Could not read QR code. Make sure the image is clear and contains a QR code.',
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -510,5 +513,8 @@ const TRANSLATIONS = {
         err_vless_duplicate:          'Дублирующийся VLESS URI — каждая ссылка должна быть уникальной.',
         err_reserved_tag:             (name) => `Имя «${name}» зарезервировано и не может использоваться как тег. Используйте другое имя или оставьте поле пустым.`,
         err_balancer_min_vless:       'Для балансировки нагрузки требуется минимум 2 VLESS URI.',
+        qr_scan_btn:                  'Вставить из QR',
+        err_qr_no_vless:              'В QR-коде не найден VLESS URI.',
+        err_qr_decode:                'Не удалось распознать QR-код. Убедитесь, что изображение чёткое и содержит QR-код.',
     },
 };
