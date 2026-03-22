@@ -639,18 +639,17 @@ button.secondary:hover {
 
 .qr-scan-btn {
     display: inline-block;
-    margin-top: 5px;
-    padding: 0;
-    background: none;
-    border: none;
-    color: var(--accent);
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
     font-size: 12px;
     cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
 }
 
-.qr-scan-btn:hover { opacity: 0.75; }
+.qr-scan-btn:hover { background: var(--hover); }
 
 /* Sniffing section */
 

@@ -2070,20 +2070,20 @@ const qrUrlDisplay = document.getElementById('qr-url-display');
 const qrCopyBtn    = document.getElementById('qr-copy-btn');
 
 async function openQr(shareUrl) {
-    qrTitle.textContent = t('qr_title');
-    qrUrlDisplay.value  = shareUrl;
-    qrContainer.innerHTML = '';
-    qrTooLong.classList.add('hidden');
-    qrContainer.classList.remove('hidden');
+    if (!qrModal) return;
+
+    if (qrTitle)      qrTitle.textContent   = t('qr_title');
+    if (qrUrlDisplay) qrUrlDisplay.value    = shareUrl;
+    if (qrContainer)  qrContainer.innerHTML = '';
+    if (qrTooLong)    qrTooLong.classList.add('hidden');
+    if (qrContainer)  qrContainer.classList.remove('hidden');
 
     // Try compressed URL in QR; fall back to plain if CompressionStream unavailable
-    let qrUrl;
+    let qrUrl = shareUrl;
     try {
         const encoded = await encodeShareCompressed(collectShareState());
         qrUrl = `${location.origin}${location.pathname}?s=${encoded}`;
-    } catch {
-        qrUrl = shareUrl;
-    }
+    } catch { /* use plain shareUrl */ }
 
     try {
         new QRCode(qrContainer, {
@@ -2096,8 +2096,8 @@ async function openQr(shareUrl) {
         });
     } catch {
         // URL too long — hide QR area, show warning
-        qrContainer.classList.add('hidden');
-        qrTooLong.classList.remove('hidden');
+        if (qrContainer) qrContainer.classList.add('hidden');
+        if (qrTooLong)   qrTooLong.classList.remove('hidden');
     }
 
     errorBackdrop.classList.remove('hidden');
