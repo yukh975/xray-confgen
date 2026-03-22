@@ -2067,13 +2067,20 @@ const qrClose     = document.getElementById('qr-close');
 const qrTitle     = document.getElementById('qr-title');
 
 async function openQr() {
-    try {
-        const state   = collectShareState();
-        const encoded = await encodeShareCompressed(state);
-        const url     = `${location.origin}${location.pathname}?s=${encoded}`;
+    const state = collectShareState();
 
-        qrTitle.textContent = t('qr_title');
-        qrContainer.innerHTML = '';
+    // Try compressed encoding; fall back to plain if CompressionStream unavailable
+    let url;
+    try {
+        const encoded = await encodeShareCompressed(state);
+        url = `${location.origin}${location.pathname}?s=${encoded}`;
+    } catch {
+        url = getShareUrl();
+    }
+
+    qrTitle.textContent = t('qr_title');
+    qrContainer.innerHTML = '';
+    try {
         new QRCode(qrContainer, {
             text:         url,
             width:        280,
@@ -2084,8 +2091,8 @@ async function openQr() {
         });
         errorBackdrop.classList.remove('hidden');
         qrModal.classList.remove('hidden');
-    } catch (e) {
-        // QR generation failed (URL too long or no CompressionStream) — skip modal
+    } catch {
+        showError(t('err_qr_url_too_long'));
     }
 }
 

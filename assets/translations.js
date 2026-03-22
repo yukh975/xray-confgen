@@ -257,6 +257,7 @@ const TRANSLATIONS = {
         qr_scan_btn:                  'Paste from QR',
         err_qr_no_vless:              'No VLESS URI found in QR code.',
         err_qr_decode:                'Could not read QR code. Make sure the image is clear and contains a QR code.',
+        err_qr_url_too_long:          'The configuration URL is too long to fit in a QR code (likely due to a post-quantum encryption key). Use the copied link instead.',
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -516,5 +517,6 @@ const TRANSLATIONS = {
         qr_scan_btn:                  'Вставить из QR',
         err_qr_no_vless:              'В QR-коде не найден VLESS URI.',
         err_qr_decode:                'Не удалось распознать QR-код. Убедитесь, что изображение чёткое и содержит QR-код.',
+        err_qr_url_too_long:          'Ссылка слишком длинная для QR-кода (вероятно, из-за ключа пост-квантового шифрования). Воспользуйтесь скопированной ссылкой.',
     },
 };
