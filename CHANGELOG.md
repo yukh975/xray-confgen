@@ -27,11 +27,13 @@
 - **Balancer**: when enabled, a `balancers` block is added to routing with the configured strategy; routing rules and the catch-all can target the `balancer` outbound; enabling with fewer than 2 VLESS entries is blocked with an error
 - **leastPing strategy**: when selected, an `observatory` top-level block is added with the configured probe URL and interval
 - **Import config.json** updated: all VLESS outbounds are imported as separate entries; balancer and observatory settings are restored
-- Post-quantum crypto: `encryption=mlkem768x25519plus...` and `pqv` fields are parsed from VLESS URI and included in the outbound user entry
-- **Share QR code**: the Share button shows a QR code modal for scanning on a mobile device, in addition to copying the link to clipboard
+- Post-quantum crypto: `encryption=mlkem768x25519plus...` and `pqv` fields are parsed from VLESS URI and included in the outbound user entry; correctly restored on config.json import
+- **Share modal**: clicking Share opens a modal with a QR code (compressed with deflate for scannability) and the full configuration URL displayed on screen; a Copy button lets you copy the URL from the modal; if the URL is too long for QR (e.g. due to a PQ key) a warning is shown and the link is still available
+- **Scan QR → paste URI**: each VLESS row now has a "Paste from QR" button — opens camera on mobile / file picker on desktop, decodes the QR image with jsQR and fills in the URI field
 - Multi-select picker (routing rules, DNS rules): checked items appear at the top of the dropdown, sorted alphabetically; re-sorted on every check/uncheck
-- **DNS server deletion**: when a DNS server is removed, rules that referenced it are removed automatically; indices in remaining rules are decremented accordingly
+- **DNS server deletion**: deleting a server that is referenced by DNS rules is now blocked with an error message "Remove or reassign those rules first"; indices in rules referencing higher-indexed servers are decremented automatically
 - Default routing rules simplified: removed `geosite:ru → direct` and `geoip:ru → direct`; defaults are now `geoip:private → direct` and `geosite:category-ads-all → block`
+- DNS rule buttons (Add / Clear) are right-aligned
 
 ---
 
