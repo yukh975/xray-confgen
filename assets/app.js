@@ -108,8 +108,6 @@ const DNS_PRESETS = {
 
 const DEFAULT_RULES = [
     { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
-    { db: 'geosite.dat', values: ['ru'],               action: 'direct' },
-    { db: 'geoip.dat',   values: ['ru'],               action: 'direct' },
     { db: 'geosite.dat', values: ['category-ads-all'], action: 'block'  },
 ];
 
@@ -118,8 +116,6 @@ const ROUTE_PRESETS = [
         id: 'preset_russia',
         rules: [
             { db: 'geoip.dat',   values: ['private'],          action: 'direct' },
-            { db: 'geosite.dat', values: ['ru'],               action: 'direct' },
-            { db: 'geoip.dat',   values: ['ru'],               action: 'direct' },
             { db: 'geosite.dat', values: ['category-ads-all'], action: 'block'  },
         ],
     },
@@ -515,6 +511,14 @@ const observatoryFields       = document.getElementById('observatory-fields');
 const balancerStrategySelect  = document.getElementById('balancer_strategy');
 
 balancerEnabledCheckbox?.addEventListener('change', () => {
+    if (balancerEnabledCheckbox.checked) {
+        const vlessCount = vlessList.querySelectorAll('.vless-row').length;
+        if (vlessCount < 2) {
+            balancerEnabledCheckbox.checked = false;
+            showError(t('err_balancer_min_vless'));
+            return;
+        }
+    }
     balancerFields.classList.toggle('hidden', !balancerEnabledCheckbox.checked);
     updateActionSelects();
 });
@@ -747,6 +751,13 @@ function buildValuePicker(initDb, selectedValues = []) {
                     cb.checked ? selected.add(tag) : selected.delete(tag);
                     updateTrigger();
                     saveState();
+                    // Re-render to move checked items to top, preserving search text
+                    const q = dropdown.querySelector('.picker-search input')?.value ?? '';
+                    renderCheckboxes(knownTags);
+                    if (q) {
+                        const si = dropdown.querySelector('.picker-search input');
+                        if (si) { si.value = q; si.dispatchEvent(new Event('input')); }
+                    }
                 });
 
                 const text = document.createElement('span');
@@ -994,7 +1005,23 @@ function createDnsServerRow({ preset = 'google_doh', custom = '', name = '' } = 
     removeBtn.className   = 'remove-btn';
     removeBtn.title       = t('remove_title');
     removeBtn.textContent = '✕';
-    removeBtn.addEventListener('click', () => { row.remove(); updateRuleServerSelects(); saveState(); });
+    removeBtn.addEventListener('click', () => {
+        const allServerRows = [...dnsServersEl.querySelectorAll('.dns-server-row')];
+        const deletedIdx = allServerRows.indexOf(row);
+        // Adjust dns rule server_idx references
+        dnsRulesEl.querySelectorAll('.dns-rule-row').forEach(ruleRow => {
+            const sel = ruleRow.querySelector('.dns-server-select');
+            const idx = parseInt(sel.value) || 0;
+            if (idx === deletedIdx) {
+                ruleRow.remove(); // rule referenced deleted server — remove it
+            } else if (idx > deletedIdx) {
+                sel.value = idx - 1; // shift down
+            }
+        });
+        row.remove();
+        updateRuleServerSelects();
+        saveState();
+    });
 
     row.appendChild(presetSelect);
     row.appendChild(customFields);
@@ -1935,16 +1962,20 @@ const qrClose     = document.getElementById('qr-close');
 
 function openQr(url) {
     qrContainer.innerHTML = '';
-    new QRCode(qrContainer, {
-        text:         url,
-        width:        220,
-        height:       220,
-        colorDark:    '#000000',
-        colorLight:   '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M,
-    });
-    errorBackdrop.classList.remove('hidden');
-    qrModal.classList.remove('hidden');
+    try {
+        new QRCode(qrContainer, {
+            text:         url,
+            width:        220,
+            height:       220,
+            colorDark:    '#000000',
+            colorLight:   '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M,
+        });
+        errorBackdrop.classList.remove('hidden');
+        qrModal.classList.remove('hidden');
+    } catch (e) {
+        // URL too long for QR code capacity — silently skip the modal
+    }
 }
 
 function closeQr() {

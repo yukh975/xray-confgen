@@ -252,6 +252,7 @@ const TRANSLATIONS = {
         err_no_vless:                 'At least one VLESS URI is required (must start with vless://)',
         err_vless_duplicate:          'Duplicate VLESS URI — each entry must be unique.',
         err_reserved_tag:             (name) => `The name "${name}" is reserved and cannot be used as a tag. Use a different name or leave it blank.`,
+        err_balancer_min_vless:       'Load Balancing requires at least 2 VLESS URIs.',
     },
     ru: {
         subtitle:               'Генератор <code>config.json</code> для xray-core из VLESS URI',
@@ -506,5 +507,6 @@ const TRANSLATIONS = {
         err_no_vless:                 'Требуется хотя бы один VLESS URI (должен начинаться с vless://)',
         err_vless_duplicate:          'Дублирующийся VLESS URI — каждая ссылка должна быть уникальной.',
         err_reserved_tag:             (name) => `Имя «${name}» зарезервировано и не может использоваться как тег. Используйте другое имя или оставьте поле пустым.`,
+        err_balancer_min_vless:       'Для балансировки нагрузки требуется минимум 2 VLESS URI.',
     },
 };

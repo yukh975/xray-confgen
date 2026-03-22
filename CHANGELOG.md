@@ -24,9 +24,14 @@
 
 ### Features
 - **Multiple outbounds**: each VLESS entry becomes a separate outbound in the config; tags are derived from the Name field or auto-assigned (proxy, proxy2, …)
-- **Balancer**: when enabled, a `balancers` block is added to routing with the configured strategy; routing rules and the catch-all can target the `balancer` outbound
+- **Balancer**: when enabled, a `balancers` block is added to routing with the configured strategy; routing rules and the catch-all can target the `balancer` outbound; enabling with fewer than 2 VLESS entries is blocked with an error
 - **leastPing strategy**: when selected, an `observatory` top-level block is added with the configured probe URL and interval
 - **Import config.json** updated: all VLESS outbounds are imported as separate entries; balancer and observatory settings are restored
+- Post-quantum crypto: `encryption=mlkem768x25519plus...` and `pqv` fields are parsed from VLESS URI and included in the outbound user entry
+- **Share QR code**: the Share button shows a QR code modal for scanning on a mobile device, in addition to copying the link to clipboard
+- Multi-select picker (routing rules, DNS rules): checked items appear at the top of the dropdown, sorted alphabetically; re-sorted on every check/uncheck
+- **DNS server deletion**: when a DNS server is removed, rules that referenced it are removed automatically; indices in remaining rules are decremented accordingly
+- Default routing rules simplified: removed `geosite:ru → direct` and `geoip:ru → direct`; defaults are now `geoip:private → direct` and `geosite:category-ads-all → block`
 
 ---
 
