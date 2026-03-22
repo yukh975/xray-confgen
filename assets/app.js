@@ -1008,15 +1008,21 @@ function createDnsServerRow({ preset = 'google_doh', custom = '', name = '' } = 
     removeBtn.addEventListener('click', () => {
         const allServerRows = [...dnsServersEl.querySelectorAll('.dns-server-row')];
         const deletedIdx = allServerRows.indexOf(row);
-        // Adjust dns rule server_idx references
-        dnsRulesEl.querySelectorAll('.dns-rule-row').forEach(ruleRow => {
+        // Block deletion if any DNS rule references this server
+        const ruleRows = [...dnsRulesEl.querySelectorAll('.dns-rule-row')];
+        const usedIn = ruleRows.filter(ruleRow => {
             const sel = ruleRow.querySelector('.dns-server-select');
-            const idx = parseInt(sel.value) || 0;
-            if (idx === deletedIdx) {
-                ruleRow.remove(); // rule referenced deleted server — remove it
-            } else if (idx > deletedIdx) {
-                sel.value = idx - 1; // shift down
-            }
+            return parseInt(sel.value, 10) === deletedIdx;
+        });
+        if (usedIn.length > 0) {
+            showError(t('err_dns_server_in_use', usedIn.length));
+            return;
+        }
+        // Decrement server_idx in rules referencing higher-indexed servers
+        ruleRows.forEach(ruleRow => {
+            const sel = ruleRow.querySelector('.dns-server-select');
+            const idx = parseInt(sel.value, 10);
+            if (idx > deletedIdx) sel.value = idx - 1;
         });
         row.remove();
         updateRuleServerSelects();
