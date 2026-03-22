@@ -4,10 +4,6 @@
 
 # Changelog
 
-## v1.0.5 — unreleased
-
----
-
 ## v1.0.4 — 2026-03-22
 
 ### UI
@@ -38,6 +34,7 @@
 - **DNS server deletion**: deleting a server that is referenced by DNS rules is now blocked with an error message "Remove or reassign those rules first"; indices in rules referencing higher-indexed servers are decremented automatically
 - Default routing rules simplified: removed `geosite:ru → direct` and `geoip:ru → direct`; defaults are now `geoip:private → direct` and `geosite:category-ads-all → block`
 - DNS rule buttons (Add / Clear) are right-aligned
+- Sniffing block is now expanded by default on first load and after clearing the form
 
 ---
 
