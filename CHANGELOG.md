@@ -4,6 +4,10 @@
 
 # Changelog
 
+## v1.0.5 — unreleased
+
+---
+
 ## v1.0.4 — 2026-03-22
 
 ### UI
