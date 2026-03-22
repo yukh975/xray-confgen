@@ -1273,6 +1273,7 @@ function applyState(state) {
         vlessList.appendChild(createVlessRow());
         updateVlessPlaceholders();
         loadDefaultRules();
+        sniffingFields.classList.remove('hidden'); // sniffing on by default
     }
 })();
 
