@@ -1753,17 +1753,21 @@ function parseConfigJson(config) {
         const name  = vlessOut._comment ?? '';
         if (!vnext || !user) return null;
 
-        const uuid     = user.id;
-        const flow     = user.flow ?? '';
+        const uuid       = user.id;
+        const flow       = user.flow ?? '';
+        const encryption = user.encryption ?? 'none';
+        const pqv        = user.pqv ?? '';
         const host     = vnext.address;
         const port     = vnext.port;
         const network  = ss.network ?? 'tcp';
         const security = ss.security ?? 'none';
 
         const params = new URLSearchParams();
-        if (network !== 'tcp')   params.set('type', network);
-        if (security !== 'none') params.set('security', security);
-        if (flow)                params.set('flow', flow);
+        if (network !== 'tcp')        params.set('type', network);
+        if (security !== 'none')      params.set('security', security);
+        if (encryption !== 'none')    params.set('encryption', encryption);
+        if (pqv)                      params.set('pqv', pqv);
+        if (flow)                     params.set('flow', flow);
 
         if (network === 'ws' && ss.wsSettings) {
             if (ss.wsSettings.path)            params.set('path', ss.wsSettings.path);
