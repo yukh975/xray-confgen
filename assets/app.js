@@ -2067,22 +2067,26 @@ const qrClose     = document.getElementById('qr-close');
 const qrTitle     = document.getElementById('qr-title');
 
 async function openQr() {
-    const state   = collectShareState();
-    const encoded = await encodeShareCompressed(state);
-    const url     = `${location.origin}${location.pathname}?s=${encoded}`;
+    try {
+        const state   = collectShareState();
+        const encoded = await encodeShareCompressed(state);
+        const url     = `${location.origin}${location.pathname}?s=${encoded}`;
 
-    qrTitle.textContent = t('qr_title');
-    qrContainer.innerHTML = '';
-    new QRCode(qrContainer, {
-        text:         url,
-        width:        280,
-        height:       280,
-        colorDark:    '#000000',
-        colorLight:   '#ffffff',
-        correctLevel: QRCode.CorrectLevel.L,
-    });
-    errorBackdrop.classList.remove('hidden');
-    qrModal.classList.remove('hidden');
+        qrTitle.textContent = t('qr_title');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+            text:         url,
+            width:        280,
+            height:       280,
+            colorDark:    '#000000',
+            colorLight:   '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L,
+        });
+        errorBackdrop.classList.remove('hidden');
+        qrModal.classList.remove('hidden');
+    } catch (e) {
+        // QR generation failed (URL too long or no CompressionStream) — skip modal
+    }
 }
 
 function closeQr() {
