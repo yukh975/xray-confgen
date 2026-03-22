@@ -1681,8 +1681,8 @@ function getShareUrl() {
 
 const shareBtn = document.getElementById('share-btn');
 
-shareBtn?.addEventListener('click', async () => {
-    await openQr();
+shareBtn?.addEventListener('click', () => {
+    openQr();
     const url = getShareUrl();
     navigator.clipboard.writeText(url).then(() => {
         shareBtn.textContent = t('share_copied');
@@ -2066,35 +2066,50 @@ const qrContainer = document.getElementById('qr-container');
 const qrClose     = document.getElementById('qr-close');
 const qrTitle     = document.getElementById('qr-title');
 
-async function openQr() {
-    const state = collectShareState();
+// QR state: list of VLESS URIs for multi-entry navigation
+let qrUris  = [];
+let qrIndex = 0;
 
-    // Try compressed encoding; fall back to plain if CompressionStream unavailable
-    let url;
-    try {
-        const encoded = await encodeShareCompressed(state);
-        url = `${location.origin}${location.pathname}?s=${encoded}`;
-    } catch {
-        url = getShareUrl();
-    }
+const qrNav     = document.getElementById('qr-nav');
+const qrPrev    = document.getElementById('qr-prev');
+const qrNext    = document.getElementById('qr-next');
+const qrCounter = document.getElementById('qr-counter');
 
-    qrTitle.textContent = t('qr_title');
+function renderQrPage(index) {
     qrContainer.innerHTML = '';
-    try {
-        new QRCode(qrContainer, {
-            text:         url,
-            width:        280,
-            height:       280,
-            colorDark:    '#000000',
-            colorLight:   '#ffffff',
-            correctLevel: QRCode.CorrectLevel.L,
-        });
-        errorBackdrop.classList.remove('hidden');
-        qrModal.classList.remove('hidden');
-    } catch {
-        showError(t('err_qr_url_too_long'));
+    new QRCode(qrContainer, {
+        text:         qrUris[index],
+        width:        280,
+        height:       280,
+        colorDark:    '#000000',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L,
+    });
+    if (qrUris.length > 1) {
+        qrCounter.textContent = `${index + 1} / ${qrUris.length}`;
+        qrPrev.disabled = index === 0;
+        qrNext.disabled = index === qrUris.length - 1;
     }
 }
+
+function openQr() {
+    const entries = collectVlessEntries().filter(e => e.uri.trim().startsWith('vless://'));
+    if (entries.length === 0) return;
+
+    qrUris  = entries.map(e => e.uri.trim());
+    qrIndex = 0;
+
+    const multi = qrUris.length > 1;
+    qrNav.classList.toggle('hidden', !multi);
+    qrTitle.textContent = t('qr_title');
+
+    renderQrPage(0);
+    errorBackdrop.classList.remove('hidden');
+    qrModal.classList.remove('hidden');
+}
+
+qrPrev?.addEventListener('click', () => { qrIndex--; renderQrPage(qrIndex); });
+qrNext?.addEventListener('click', () => { qrIndex++; renderQrPage(qrIndex); });
 
 function closeQr() {
     qrModal.classList.add('hidden');
