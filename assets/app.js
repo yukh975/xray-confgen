@@ -1962,20 +1962,31 @@ const qrClose     = document.getElementById('qr-close');
 
 function openQr(url) {
     qrContainer.innerHTML = '';
-    try {
-        new QRCode(qrContainer, {
-            text:         url,
-            width:        220,
-            height:       220,
-            colorDark:    '#000000',
-            colorLight:   '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M,
-        });
-        errorBackdrop.classList.remove('hidden');
-        qrModal.classList.remove('hidden');
-    } catch (e) {
-        // URL too long for QR code capacity — silently skip the modal
+    // Try progressively lower error correction levels to maximise cell size
+    const levels = [QRCode.CorrectLevel.L, QRCode.CorrectLevel.M, QRCode.CorrectLevel.Q];
+    let generated = false;
+    for (const level of levels) {
+        try {
+            new QRCode(qrContainer, {
+                text:         url,
+                width:        280,
+                height:       280,
+                colorDark:    '#000000',
+                colorLight:   '#ffffff',
+                correctLevel: level,
+            });
+            generated = true;
+            break;
+        } catch (e) {
+            qrContainer.innerHTML = '';
+        }
     }
+    if (!generated) {
+        // URL exceeds QR capacity at any level — skip modal, clipboard copy still works
+        return;
+    }
+    errorBackdrop.classList.remove('hidden');
+    qrModal.classList.remove('hidden');
 }
 
 function closeQr() {
